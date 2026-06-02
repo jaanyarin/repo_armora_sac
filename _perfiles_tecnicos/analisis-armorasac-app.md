@@ -188,6 +188,7 @@ Endpoints expuestos en `catalogo.js` (~60 endpoints):
 | **Cambios/Devoluciones** | ✅ | Productos para cambio |
 | **Integración SUNAT** | ✅ | Segmento, familia, clase, clasificación SUNAT |
 | **Tipo de Cambio** | ✅ | Moneda y redondeo |
+| **Portal Cliente/Proveedor** | ❌ **No existe en legacy** | ARMORA actual es solo para uso interno (admin). Clientes/proveedores no tienen autoservicio — todo se gestiona por teléfono o visita. El nuevo sistema debe crear este portal desde cero |
 | **PWA (offline)** | Parcial | Solo tiene manifest.json, no service worker detectado |
 | **Búsqueda** | ✅ | Filtros por dropdowns en cascada |
 | **Exportación/Reportes** | Probable | Tablas DataTable con exportación probable |

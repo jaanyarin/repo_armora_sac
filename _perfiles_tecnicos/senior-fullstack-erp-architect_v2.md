@@ -26,7 +26,7 @@ No es solo un desarrollador que escribe código: es un **arquitecto de solucione
 | **Job/Queue** | Laravel Queues con Redis + Horizon | Procesamiento asíncrono confiable para envíos SUNAT |
 | **Testing** | Pest / PHPUnit | TDD para integridad financiera |
 
-### 1.2 Frontend
+### 1.2 Frontend — Admin ERP (Desktop-primary)
 
 | Componente | Tecnología | Razón |
 |---|---|---|
@@ -40,6 +40,20 @@ No es solo un desarrollador que escribe código: es un **arquitecto de solucione
 | **Build Tool** | Vite | Dev server rápido, HMR instantáneo |
 | **Testing** | Vitest + Playwright | Unit + integración + E2E |
 | **Patrón de conexión** | Inertia.js (opcional) o API REST standalone | Inertia elimina la necesidad de API REST separada; REST standalone da más flexibilidad |
+
+### 1.3 Frontend — Portal Cliente/Proveedor (Mobile-first + Responsive)
+
+| Componente | Tecnología | Razón |
+|---|---|---|
+| **Framework** | React 19 + Vite (mismo bundle que Admin, rutas separadas) | Código compartido (hooks, tipos, API client), pero layouts y componentes distintos |
+| **UI Library** | MUI 6 + Mobile-first design system | Breakpoints `xs/sm/md/lg/xl`, Drawer → Bottom Sheet en móvil, Data Grid con columnas ocultables |
+| **PWA** | vite-plugin-pwa | Service worker, offline support, add-to-home-screen desde el navegador del celular |
+| **Notificaciones** | Laravel Broadcasting + WebPush | Notificaciones push cuando cambia el estado del pedido |
+| **Responsive** | MUI Grid + Container + useMediaQuery | El mismo componente se reordena según viewport: cards apiladas en celular, grid en laptop |
+| **Estados** | TanStack Query + Zustand | Cache offline-first, refetch en segundo plano |
+| **Ruteo** | React Router v7 con lazy loading diferencial | Portal carga bundle liviano (sin Data Grids pesados, sin módulos de admin) |
+
+> **Nota**: No hay "detección" de dispositivo. MUI con breakpoints responsivos hace que el Portal se vea bien en cualquier pantalla (celular, tablet, laptop). El mismo bundle de Portal funciona en todos los tamaños sin cambiar código. La separación Admin vs Portal es de UX/contenido, no técnica.
 
 ### 1.3 Infraestructura y DevOps
 
@@ -62,6 +76,34 @@ No es solo un desarrollador que escribe código: es un **arquitecto de solucione
 ### 2.1 Patrón Arquitectónico
 
 **Modular Monolith** con módulos claramente delimitados, evolucionable a microservicios cuando se justifique.
+
+### Dual-Frontend Architecture
+
+El sistema tiene **dos caras** desde el mismo backend Laravel:
+
+```
+                    ┌──────────────────────────────────┐
+                    │       Nginx (reverse proxy)       │
+                    │  /admin/* → Admin SPA             │
+                    │  /portal/* → Portal SPA           │
+                    │  /api/* → Laravel API             │
+                    └──────────┬───────────────────────┘
+                               │
+                    ┌──────────▼───────────────────────┐
+                    │     Laravel 12 API (REST)         │
+                    │     app/Modules/*                 │
+                    │     Sanctum + Spatie RBAC         │
+                    └──────────────────────────────────┘
+```
+
+| Interfaz | Público | Primary Device | Bundle | Enfoque UX |
+|---|---|---|---|---|
+| **Admin ERP** | Usuarios internos (admin, vendedores, almacén) | Desktop / Laptop | Pesado: Data Grids, forms complejos, dashboards, 30 módulos | Productividad, datos densos, multitab |
+| **Portal Cliente/Proveedor** | Clientes, proveedores externos | Celular (navegador) + Laptop | Liviano: cards, CTA grandes, tracking, forms simples | Autoservicio mobile-first, PWA |
+
+> Ambos frontends comparten el mismo `node_modules`, tipos TypeScript, hooks personalizados y API client. Solo difieren en rutas, layouts y componentes específicos.
+
+### Estructura de Módulos (Backend)
 
 ```
 src/
@@ -108,7 +150,14 @@ src/
 │       └── Commands/             # Artisan commands (cierre diario, etc.)
 ├── resources/
 │   └── js/
-│       └── Pages/                # Componentes React (si se usa Inertia)
+│       ├── Admin/                # React SPA del Admin ERP (desktop-primary)
+│       │   ├── layouts/
+│       │   ├── pages/
+│       │   └── components/
+│       └── Portal/               # React SPA del Portal Cliente/Proveedor (mobile-first)
+│           ├── layouts/
+│           ├── pages/
+│           └── components/
 ├── database/
 │   └── migrations/
 ├── tests/
@@ -167,6 +216,7 @@ Modelo RBAC con Spatie:
 | **Logística / Rutas** | Planificación de rutas de reparto, zonas, asignación de transportistas |
 | **Inventario** | Valuación (PEPS, promedio ponderado), ajustes, mermas, conteos cíclicos, kardex valorizado |
 | **Compras** | Orden de compra, ingreso de almacén, validación de facturas de proveedores |
+| **Portal Cliente/Proveedor** | Autoservicio: ver catálogo, hacer pedido de compra, tracking de despacho, historial de facturas, notificaciones push de cambios de estado |
 
 ### Stack SUNAT específico (Laravel)
 
@@ -236,6 +286,9 @@ Modelo RBAC con Spatie:
 | **Monitoreo** | Laravel Pulse + Sentry, logs estructurados, métricas personalizadas |
 | **APIs REST** | Diseño de recursos, versionamiento, documentación con Scribe o Scramble |
 | **Frontend performance** | Lazy loading, code splitting, bundle analysis, MUI tree-shaking |
+| **Responsive Design (MUI)** | Breakpoints `xs/sm/md/lg/xl`, Grid responsive, `useMediaQuery`, layouts adaptativos |
+| **PWA** | `vite-plugin-pwa`, service workers, offline mode, manifest, add-to-home-screen |
+| **Notificaciones Push** | WebPush API + Laravel Broadcasting, notificaciones en tiempo real desde el backend |
 | **Laravel Events + Broadcasting** | WebSockets (Laravel Reverb o Pusher), event-driven module communication |
 
 ### Nivel Básico (Deseable)
@@ -304,11 +357,17 @@ Se requiere modernización completa manteniendo operación continua.
 Modular Monolith con Laravel 12 + React 19 + MUI + PostgreSQL.
 Migración gradual con Strangler Fig Pattern.
 
+## Dual-Frontend
+- **Admin ERP**: Desktop-primary, Data Grids, forms complejos, 30 módulos
+- **Portal Cliente/Proveedor**: Mobile-first, responsive, PWA, cards, autoservicio de pedidos
+- Ambos consumen la misma API Laravel; se diferencian por ruta (`/admin/*`, `/portal/*`)
+
 ## Módulos Priorizados (Fase 1)
-1. Auth (Sanctum + Spatie RBAC)
+1. Auth (Sanctum + Spatie RBAC) — base para Admin y Portal
 2. Customers (CRUD + validación DNI/RUC con API SUNAT)
-3. Products (catálogo + clases/subclases + IGV/ISC)
-4. Sales (ventas + preventas + notas de crédito + envío SUNAT con Greenter)
+3. Portal Cliente (login + ver catálogo + hacer pedido)
+4. Products (catálogo + clases/subclases + IGV/ISC)
+5. Sales (ventas + preventas + notas de crédito + envío SUNAT con Greenter)
 
 ## Stack
 - Backend: PHP 8.3 + Laravel 12 + PostgreSQL 16 + Redis 7
