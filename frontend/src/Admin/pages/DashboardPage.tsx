@@ -19,7 +19,7 @@ export default function AdminDashboardPage() {
       <Typography variant="h5" gutterBottom>Dashboard</Typography>
       <Grid container spacing={3}>
         {stats.map((stat) => (
-          <Grid item xs={12} sm={6} md={3} key={stat.label}>
+          <Grid key={stat.label} size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ color: stat.color }}>{stat.icon}</Box>

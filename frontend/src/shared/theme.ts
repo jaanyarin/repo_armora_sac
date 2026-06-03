@@ -13,11 +13,6 @@ export const adminTheme = createTheme({
     h6: { fontWeight: 600 },
   },
   components: {
-    MuiDataGrid: {
-      styleOverrides: {
-        root: { border: 'none', '--DataGrid-rowBorderColor': '#e0e0e0' },
-      },
-    },
     MuiCard: {
       styleOverrides: {
         root: { borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },

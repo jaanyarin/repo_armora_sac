@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Models;
+
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
+
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+
+    protected $fillable = [
+        'codigo',
+        'username',
+        'name',
+        'nombre_completo',
+        'email',
+        'dni',
+        'ruc',
+        'password',
+        'telefono',
+        'activo',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'activo' => 'boolean',
+            'ultimo_acceso' => 'datetime',
+        ];
+    }
+
+    public function findForPassport(string $username): self
+    {
+        return $this->where('username', $username)->first();
+    }
+}
