@@ -10,12 +10,15 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 5175,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8005',
         changeOrigin: true,
       },
     },
+  },
+  optimizeDeps: {
+    exclude: ['@popperjs/core', '@hookform/resolvers/zod'],
   },
 })
