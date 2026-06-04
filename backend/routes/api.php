@@ -3,7 +3,9 @@
 use App\Modules\Auth\Http\Controllers\AuthController;
 use App\Modules\Catalog\Http\Controllers\CatalogController;
 use App\Modules\Customers\Http\Controllers\CustomerController;
+use App\Modules\Inventory\Http\Controllers\InventoryController;
 use App\Modules\Products\Http\Controllers\ProductController;
+use App\Modules\Sales\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -40,6 +42,36 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('permisos', 'permisos');
     });
 
-    Route::apiResource('customers', CustomerController::class)->parameters(['customers' => 'customer']);
-    Route::apiResource('products', ProductController::class)->parameters(['products' => 'product']);
+    Route::prefix('customers')->group(function () {
+        Route::get('/', [CustomerController::class, 'index'])->middleware('permission:ver-clientes');
+        Route::get('{customer}', [CustomerController::class, 'show'])->middleware('permission:ver-clientes');
+        Route::post('/', [CustomerController::class, 'store'])->middleware('permission:crear-clientes');
+        Route::put('{customer}', [CustomerController::class, 'update'])->middleware('permission:editar-clientes');
+        Route::delete('{customer}', [CustomerController::class, 'destroy'])->middleware('permission:eliminar-clientes');
+    });
+
+    Route::prefix('products')->group(function () {
+        Route::get('/', [ProductController::class, 'index'])->middleware('permission:ver-productos');
+        Route::get('{product}', [ProductController::class, 'show'])->middleware('permission:ver-productos');
+        Route::post('/', [ProductController::class, 'store'])->middleware('permission:crear-productos');
+        Route::put('{product}', [ProductController::class, 'update'])->middleware('permission:editar-productos');
+        Route::delete('{product}', [ProductController::class, 'destroy'])->middleware('permission:eliminar-productos');
+    });
+
+    Route::prefix('sales')->group(function () {
+        Route::get('/', [SaleController::class, 'index'])->middleware('permission:ver-ventas');
+        Route::get('{sale}', [SaleController::class, 'show'])->middleware('permission:ver-ventas');
+        Route::post('/', [SaleController::class, 'store'])->middleware('permission:crear-ventas');
+        Route::put('{sale}', [SaleController::class, 'update'])->middleware('permission:ver-ventas');
+        Route::post('{sale}/confirmar', [SaleController::class, 'confirmar'])->middleware('permission:crear-ventas');
+        Route::post('{sale}/anular', [SaleController::class, 'anular'])->middleware('permission:anular-ventas');
+        Route::delete('{sale}', [SaleController::class, 'destroy'])->middleware('permission:ver-ventas');
+        Route::post('{sale}/nota-credito', [SaleController::class, 'emitirNotaCredito'])->middleware('permission:nota-credito');
+    });
+
+    Route::prefix('inventory')->group(function () {
+        Route::get('stock', [InventoryController::class, 'stock'])->middleware('permission:ver-stock');
+        Route::get('stock/{productId}', [InventoryController::class, 'stockByProduct'])->middleware('permission:ver-stock');
+        Route::get('kardex', [InventoryController::class, 'kardex'])->middleware('permission:kardex');
+    });
 });

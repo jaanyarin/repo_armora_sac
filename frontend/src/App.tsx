@@ -8,12 +8,20 @@ import LoginPage from './shared/components/LoginPage';
 import NotFoundPage from './shared/components/NotFoundPage';
 import AdminLayout from './Admin/layouts/AdminLayout';
 import AdminDashboardPage from './Admin/pages/DashboardPage';
+import PortalLayout from './Portal/layouts/PortalLayout';
 import { useAuthStore } from './shared/hooks/useAuth';
 
 const CustomerListPage = lazy(() => import('./Admin/pages/Customers/CustomerListPage'));
 const CustomerFormPage = lazy(() => import('./Admin/pages/Customers/CustomerFormPage'));
 const ProductListPage = lazy(() => import('./Admin/pages/Products/ProductListPage'));
 const ProductFormPage = lazy(() => import('./Admin/pages/Products/ProductFormPage'));
+const SaleListPage = lazy(() => import('./Admin/pages/Sales/SaleListPage'));
+const SaleFormPage = lazy(() => import('./Admin/pages/Sales/SaleFormPage'));
+const PortalLoginPage = lazy(() => import('./Portal/pages/PortalLoginPage'));
+const PortalDashboardPage = lazy(() => import('./Portal/pages/PortalDashboardPage'));
+const ProductCatalogPage = lazy(() => import('./Portal/pages/ProductCatalogPage'));
+const OrderCreatePage = lazy(() => import('./Portal/pages/OrderCreatePage'));
+const OrderHistoryPage = lazy(() => import('./Portal/pages/OrderHistoryPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,11 +53,21 @@ function AppWithAuth() {
           <Route path="productos" element={<SuspenseWrapper><ProductListPage /></SuspenseWrapper>} />
           <Route path="productos/nuevo" element={<SuspenseWrapper><ProductFormPage /></SuspenseWrapper>} />
           <Route path="productos/:id/editar" element={<SuspenseWrapper><ProductFormPage /></SuspenseWrapper>} />
-          <Route path="ventas" element={<SuspenseWrapper><Typography sx={{ p: 4 }}>Módulo de Ventas — Próximamente</Typography></SuspenseWrapper>} />
+          <Route path="ventas" element={<SuspenseWrapper><SaleListPage /></SuspenseWrapper>} />
+          <Route path="ventas/nueva" element={<SuspenseWrapper><SaleFormPage /></SuspenseWrapper>} />
+          <Route path="ventas/:id" element={<SuspenseWrapper><SaleListPage /></SuspenseWrapper>} />
           <Route path="inventario" element={<SuspenseWrapper><Typography sx={{ p: 4 }}>Módulo de Inventario — Próximamente</Typography></SuspenseWrapper>} />
           <Route path="logistica" element={<SuspenseWrapper><Typography sx={{ p: 4 }}>Módulo de Logística — Próximamente</Typography></SuspenseWrapper>} />
           <Route path="configuracion" element={<SuspenseWrapper><Typography sx={{ p: 4 }}>Configuración — Próximamente</Typography></SuspenseWrapper>} />
         </Route>
+      </Route>
+      <Route path="/portal" element={<PortalLayout />}>
+        <Route index element={<Navigate to="productos" replace />} />
+        <Route path="productos" element={<SuspenseWrapper><ProductCatalogPage /></SuspenseWrapper>} />
+        <Route path="dashboard" element={<SuspenseWrapper><PortalDashboardPage /></SuspenseWrapper>} />
+        <Route path="login" element={<SuspenseWrapper><PortalLoginPage /></SuspenseWrapper>} />
+        <Route path="pedidos" element={<SuspenseWrapper><OrderHistoryPage /></SuspenseWrapper>} />
+        <Route path="pedidos/nuevo" element={<SuspenseWrapper><OrderCreatePage /></SuspenseWrapper>} />
       </Route>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<NotFoundPage />} />

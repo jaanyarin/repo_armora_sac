@@ -11,39 +11,23 @@ class ProductTest extends TestCase
 {
     use RefreshDatabase;
 
-    private string $token;
+    private User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RoleAndPermissionSeeder::class);
 
-        $user = User::create([
-            'codigo' => 'ADMIN-001',
-            'username' => 'admin',
-            'name' => 'Admin',
-            'nombre_completo' => 'Admin Test',
-            'email' => 'admin@test.com',
-            'dni' => '12345678',
-            'password' => bcrypt('admin123'),
-            'activo' => true,
-        ]);
-        $user->assignRole('Super-Admin');
-
-        $login = $this->postJson('/api/auth/login', [
-            'login' => 'admin',
-            'password' => 'admin123',
-        ]);
-
-        $this->token = $login->json('token');
+        $this->admin = User::factory()->create(['username' => 'admin']);
+        $this->admin->assignRole('Super-Admin');
 
         // Seed dimension tables needed for products
         $this->seedDimTables();
     }
 
-    private function authHeaders(): array
+    private function asAdmin(): static
     {
-        return ['Authorization' => "Bearer {$this->token}"];
+        return $this->actingAs($this->admin, 'sanctum');
     }
 
     private function seedDimTables(): void
@@ -57,7 +41,7 @@ class ProductTest extends TestCase
 
     public function test_list_products(): void
     {
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->getJson('/api/products');
 
         $response->assertOk();
@@ -67,7 +51,7 @@ class ProductTest extends TestCase
     {
         $umId = \Illuminate\Support\Facades\DB::table('dim_unidad_medida')->where('codigo_sunat', 'NIU')->first()->id;
 
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->postJson('/api/products', [
                 'nombre' => 'Producto Test',
                 'unidad_medida_id' => $umId,
@@ -81,7 +65,7 @@ class ProductTest extends TestCase
 
     public function test_create_product_requires_unidad_medida(): void
     {
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->postJson('/api/products', [
                 'nombre' => 'Producto Test',
             ]);
@@ -93,7 +77,7 @@ class ProductTest extends TestCase
     {
         $umId = \Illuminate\Support\Facades\DB::table('dim_unidad_medida')->where('codigo_sunat', 'NIU')->first()->id;
 
-        $create = $this->withHeaders($this->authHeaders())
+        $create = $this->asAdmin()
             ->postJson('/api/products', [
                 'nombre' => 'Producto Test',
                 'unidad_medida_id' => $umId,
@@ -101,7 +85,7 @@ class ProductTest extends TestCase
 
         $id = $create->json('data.id');
 
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->getJson("/api/products/{$id}");
 
         $response->assertOk()
@@ -112,7 +96,7 @@ class ProductTest extends TestCase
     {
         $umId = \Illuminate\Support\Facades\DB::table('dim_unidad_medida')->where('codigo_sunat', 'NIU')->first()->id;
 
-        $create = $this->withHeaders($this->authHeaders())
+        $create = $this->asAdmin()
             ->postJson('/api/products', [
                 'nombre' => 'Producto Test',
                 'unidad_medida_id' => $umId,
@@ -120,7 +104,7 @@ class ProductTest extends TestCase
 
         $id = $create->json('data.id');
 
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->putJson("/api/products/{$id}", [
                 'precio_venta' => 250.00,
             ]);
@@ -133,7 +117,7 @@ class ProductTest extends TestCase
     {
         $umId = \Illuminate\Support\Facades\DB::table('dim_unidad_medida')->where('codigo_sunat', 'NIU')->first()->id;
 
-        $create = $this->withHeaders($this->authHeaders())
+        $create = $this->asAdmin()
             ->postJson('/api/products', [
                 'nombre' => 'Producto Test',
                 'unidad_medida_id' => $umId,
@@ -141,11 +125,11 @@ class ProductTest extends TestCase
 
         $id = $create->json('data.id');
 
-        $this->withHeaders($this->authHeaders())
+        $this->asAdmin()
             ->deleteJson("/api/products/{$id}")
             ->assertOk();
 
-        $this->withHeaders($this->authHeaders())
+        $this->asAdmin()
             ->getJson("/api/products/{$id}")
             ->assertNotFound();
     }

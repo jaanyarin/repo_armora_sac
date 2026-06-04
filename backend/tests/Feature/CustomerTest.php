@@ -11,41 +11,25 @@ class CustomerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private string $token;
+    private User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RoleAndPermissionSeeder::class);
 
-        $user = User::create([
-            'codigo' => 'ADMIN-001',
-            'username' => 'admin',
-            'name' => 'Admin',
-            'nombre_completo' => 'Admin Test',
-            'email' => 'admin@test.com',
-            'dni' => '12345678',
-            'password' => bcrypt('admin123'),
-            'activo' => true,
-        ]);
-        $user->assignRole('Super-Admin');
-
-        $login = $this->postJson('/api/auth/login', [
-            'login' => 'admin',
-            'password' => 'admin123',
-        ]);
-
-        $this->token = $login->json('token');
+        $this->admin = User::factory()->create(['username' => 'admin']);
+        $this->admin->assignRole('Super-Admin');
     }
 
-    private function authHeaders(): array
+    private function asAdmin(): static
     {
-        return ['Authorization' => "Bearer {$this->token}"];
+        return $this->actingAs($this->admin, 'sanctum');
     }
 
     public function test_list_customers(): void
     {
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->getJson('/api/customers');
 
         $response->assertOk();
@@ -53,7 +37,7 @@ class CustomerTest extends TestCase
 
     public function test_create_customer(): void
     {
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->postJson('/api/customers', [
                 'tipo_documento' => 'DNI',
                 'numero_documento' => '87654321',
@@ -67,14 +51,14 @@ class CustomerTest extends TestCase
 
     public function test_create_customer_with_duplicate_document(): void
     {
-        $this->withHeaders($this->authHeaders())
+        $this->asAdmin()
             ->postJson('/api/customers', [
                 'tipo_documento' => 'DNI',
                 'numero_documento' => '87654321',
                 'nombre_completo' => 'Cliente Test',
             ]);
 
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->postJson('/api/customers', [
                 'tipo_documento' => 'DNI',
                 'numero_documento' => '87654321',
@@ -86,7 +70,7 @@ class CustomerTest extends TestCase
 
     public function test_show_customer(): void
     {
-        $create = $this->withHeaders($this->authHeaders())
+        $create = $this->asAdmin()
             ->postJson('/api/customers', [
                 'tipo_documento' => 'DNI',
                 'numero_documento' => '87654321',
@@ -95,7 +79,7 @@ class CustomerTest extends TestCase
 
         $id = $create->json('data.id');
 
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->getJson("/api/customers/{$id}");
 
         $response->assertOk()
@@ -104,7 +88,7 @@ class CustomerTest extends TestCase
 
     public function test_update_customer(): void
     {
-        $create = $this->withHeaders($this->authHeaders())
+        $create = $this->asAdmin()
             ->postJson('/api/customers', [
                 'tipo_documento' => 'DNI',
                 'numero_documento' => '87654321',
@@ -113,7 +97,7 @@ class CustomerTest extends TestCase
 
         $id = $create->json('data.id');
 
-        $response = $this->withHeaders($this->authHeaders())
+        $response = $this->asAdmin()
             ->putJson("/api/customers/{$id}", [
                 'nombre_completo' => 'Cliente Actualizado',
             ]);
@@ -124,7 +108,7 @@ class CustomerTest extends TestCase
 
     public function test_delete_customer(): void
     {
-        $create = $this->withHeaders($this->authHeaders())
+        $create = $this->asAdmin()
             ->postJson('/api/customers', [
                 'tipo_documento' => 'DNI',
                 'numero_documento' => '87654321',
@@ -133,11 +117,11 @@ class CustomerTest extends TestCase
 
         $id = $create->json('data.id');
 
-        $this->withHeaders($this->authHeaders())
+        $this->asAdmin()
             ->deleteJson("/api/customers/{$id}")
             ->assertOk();
 
-        $this->withHeaders($this->authHeaders())
+        $this->asAdmin()
             ->getJson("/api/customers/{$id}")
             ->assertNotFound();
     }

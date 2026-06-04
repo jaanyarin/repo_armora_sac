@@ -59,3 +59,26 @@ export const productsApi = {
     apiClient.put(`/products/${id}`, data),
   delete: (id: number) => apiClient.delete(`/products/${id}`),
 };
+
+export const salesApi = {
+  list: (params?: Record<string, string | number | boolean>) =>
+    apiClient.get('/sales', { params }),
+  find: (id: string) => apiClient.get(`/sales/${id}`),
+  create: (data: Record<string, unknown>) =>
+    apiClient.post('/sales', data),
+  update: (id: string, data: Record<string, unknown>) =>
+    apiClient.put(`/sales/${id}`, data),
+  confirmar: (id: string) => apiClient.post(`/sales/${id}/confirmar`),
+  anular: (id: string) => apiClient.post(`/sales/${id}/anular`),
+  emitirNotaCredito: (id: string, data: { motivo: string; nota_credito_tipo_id?: number }) =>
+    apiClient.post(`/sales/${id}/nota-credito`, data),
+};
+
+export const inventoryApi = {
+  stock: (params?: Record<string, string | number | boolean>) =>
+    apiClient.get('/inventory/stock', { params }),
+  stockByProduct: (productId: number) =>
+    apiClient.get(`/inventory/stock/${productId}`),
+  kardex: (params?: Record<string, string | number | boolean>) =>
+    apiClient.get('/inventory/kardex', { params }),
+};

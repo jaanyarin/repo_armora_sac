@@ -231,3 +231,129 @@ export interface AuthState {
   logout: () => void;
   loadUser: () => Promise<void>;
 }
+
+export interface SaleItem {
+  id: string;
+  venta_id: string;
+  producto_id: number;
+  producto?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+    unidad_medida?: string;
+  };
+  unidad_medida_id: number;
+  numero_linea: number;
+  cantidad: number;
+  precio_unitario: number;
+  descuento_linea: number;
+  subtotal: number;
+  igv: number;
+  total: number;
+  observaciones: string | null;
+}
+
+export interface Sale {
+  id: string;
+  codigo: string;
+  cliente_id: number;
+  cliente?: {
+    id: number;
+    codigo: string;
+    nombre_completo: string;
+    numero_documento: string;
+  };
+  usuario_id: number;
+  usuario?: {
+    id: number;
+    nombre_completo: string;
+  };
+  documento_tipo_id: number | null;
+  serie: string | null;
+  numero: string | null;
+  fecha_emision: string | null;
+  fecha_vencimiento: string | null;
+  moneda_id: number | null;
+  subtotal: number;
+  descuento_global: number;
+  igv: number;
+  isc: number;
+  total: number;
+  saldo_pendiente: number;
+  estado: 'borrador' | 'confirmada' | 'anulada' | 'pagada' | 'parcial';
+  observaciones: string | null;
+  origen: 'admin' | 'portal';
+  items?: SaleItem[];
+  items_count?: number;
+  notas_credito?: Array<{
+    id: string;
+    codigo: string;
+    motivo: string;
+    total: number;
+    estado: string;
+  }>;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface SaleItemPayload {
+  producto_id: number;
+  unidad_medida_id: number;
+  cantidad: number;
+  precio_unitario: number;
+  descuento_linea?: number;
+  observaciones?: string;
+}
+
+export interface SalePayload {
+  cliente_id: number;
+  fecha_emision: string;
+  estado?: 'borrador' | 'confirmada';
+  observaciones?: string;
+  origen?: 'admin' | 'portal';
+  items: SaleItemPayload[];
+}
+
+export interface CreditNote {
+  id: string;
+  codigo: string;
+  venta_id: string;
+  usuario_id: number;
+  motivo: string;
+  total: number;
+  estado: 'emitida' | 'anulada';
+  created_at: string | null;
+}
+
+export interface Stock {
+  id: number;
+  producto_id: number;
+  almacen_id: number | null;
+  cantidad_disponible: number;
+  ultima_actualizacion: string | null;
+  producto?: Product;
+}
+
+export interface InventoryMovement {
+  id: string;
+  producto_id: number;
+  almacen_id: number | null;
+  tipo_movimiento: 'entrada' | 'salida' | 'ajuste' | 'transferencia';
+  referencia_tipo: string | null;
+  referencia_id: string | null;
+  cantidad: number;
+  precio_unitario: number;
+  valor_total: number;
+  saldo_anterior: number;
+  saldo_nuevo: number;
+  observaciones: string | null;
+  usuario_id: number;
+  fecha_movimiento: string | null;
+  producto?: Product;
+}
+
+export interface CartItem {
+  producto: Product;
+  cantidad: number;
+  precio_unitario: number;
+}

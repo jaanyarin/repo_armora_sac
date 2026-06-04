@@ -13,6 +13,12 @@
         },
         "gemma4:latest": {
           "name": "Gemma 4 latest (local)"
+        },
+        "minimax-m3:cloud": {
+          "name": "Minimax M3 Cloud"
+        },
+        "deepseek-v4-pro:cloud": {
+          "name": "DeepSeek V4 Pro Cloud"
         }
       }
     }

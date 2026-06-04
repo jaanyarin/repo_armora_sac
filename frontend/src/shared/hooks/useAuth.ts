@@ -22,7 +22,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       await authApi.logout();
     } catch {
-
+      // ignore logout errors
     }
     localStorage.removeItem('auth_token');
     set({ user: null, token: null, isAuthenticated: false });
