@@ -29,6 +29,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['name' => 'crear-ventas',     'descripcion' => 'Crear nuevas ventas',            'modulo' => 'Sales'],
             ['name' => 'editar-ventas',    'descripcion' => 'Editar ventas existentes',       'modulo' => 'Sales'],
             ['name' => 'anular-ventas',    'descripcion' => 'Anular ventas',                  'modulo' => 'Sales'],
+            ['name' => 'eliminar-ventas',  'descripcion' => 'Eliminar ventas definitivamente (físico)', 'modulo' => 'Sales'],
             ['name' => 'nota-credito',     'descripcion' => 'Emitir notas de crédito',        'modulo' => 'Sales'],
             ['name' => 'ver-stock',        'descripcion' => 'Consultar stock',                'modulo' => 'Inventory'],
             ['name' => 'ajustar-stock',    'descripcion' => 'Realizar ajustes de stock',      'modulo' => 'Inventory'],
@@ -44,7 +45,10 @@ class RoleAndPermissionSeeder extends Seeder
         ];
 
         foreach ($permissionDefs as $p) {
-            $perm = Permission::create(['name' => $p['name'], 'guard_name' => 'web']);
+            $perm = Permission::firstOrCreate(
+                ['name' => $p['name'], 'guard_name' => 'web'],
+                ['descripcion' => $p['descripcion'], 'modulo' => $p['modulo']],
+            );
             $perm->descripcion = $p['descripcion'];
             $perm->modulo = $p['modulo'];
             $perm->save();
@@ -52,7 +56,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         $roleDefs = [
             'Super-Admin'    => Permission::all()->pluck('name')->toArray(),
-            'Admin'          => ['ver-usuarios','crear-usuarios','ver-clientes','crear-clientes','editar-clientes','eliminar-clientes','ver-productos','crear-productos','editar-productos','eliminar-productos','editar-precios','ver-ventas','crear-ventas','anular-ventas','nota-credito','ver-stock','ajustar-stock','kardex','ver-compras','crear-compras','aprobar-compras','ver-finanzas','enviar-sunat','ver-rutas','ver-dashboard','ver-reportes'],
+            'Admin'          => ['ver-usuarios','crear-usuarios','ver-clientes','crear-clientes','editar-clientes','eliminar-clientes','ver-productos','crear-productos','editar-productos','eliminar-productos','editar-precios','ver-ventas','crear-ventas','editar-ventas','anular-ventas','eliminar-ventas','nota-credito','ver-stock','ajustar-stock','kardex','ver-compras','crear-compras','aprobar-compras','ver-finanzas','enviar-sunat','ver-rutas','ver-dashboard','ver-reportes'],
             'Gerente'        => ['ver-usuarios','ver-clientes','ver-productos','ver-ventas','ver-stock','kardex','ver-compras','ver-finanzas','ver-dashboard','ver-reportes'],
             'Vendedor'       => ['ver-clientes','crear-clientes','ver-productos','ver-ventas','crear-ventas','editar-ventas','nota-credito','ver-stock','ver-dashboard'],
             'Jefe-Almacen'   => ['ver-productos','ver-stock','ajustar-stock','kardex','ver-dashboard'],
@@ -65,8 +69,8 @@ class RoleAndPermissionSeeder extends Seeder
         ];
 
         foreach ($roleDefs as $roleName => $permissions) {
-            $role = Role::create(['name' => $roleName, 'guard_name' => 'web']);
-            $role->givePermissionTo($permissions);
+            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            $role->syncPermissions($permissions);
         }
     }
 }

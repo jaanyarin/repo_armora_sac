@@ -10,6 +10,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi, productsApi, salesApi, catalogApi } from '../../../shared/api/endpoints';
 import type { Customer, Product, SaleItemPayload, UnidadMedida } from '../../../shared/types';
+import { calcularTotalesIgv } from '../../../shared/utils/igvCalculator';
 
 interface ItemRow {
   key: string;
@@ -18,8 +19,6 @@ interface ItemRow {
   cantidad: number;
   precio_unitario: number;
 }
-
-const IGV_RATE = 0.18;
 
 export default function SaleFormPage() {
   const navigate = useNavigate();
@@ -82,15 +81,9 @@ export default function SaleFormPage() {
   };
 
   const totales = useMemo(() => {
-    let totalGravada = 0;
-    for (const item of items) {
-      const lineTotal = item.cantidad * item.precio_unitario;
-      const lineSubtotal = lineTotal / (1 + IGV_RATE);
-      totalGravada += lineSubtotal;
-    }
-    const igv = totalGravada * IGV_RATE;
-    const total = totalGravada + igv;
-    return { subtotal: totalGravada, igv, total };
+    return calcularTotalesIgv(
+      items.map(i => ({ cantidad: i.cantidad, precio_unitario: i.precio_unitario })),
+    );
   }, [items]);
 
   const handleSubmit = (estado: 'borrador' | 'confirmada') => {

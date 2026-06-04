@@ -12,13 +12,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCartStore } from '../../shared/hooks/useCart';
 import { salesApi, customersApi } from '../../shared/api/endpoints';
 import type { Customer } from '../../shared/types';
-
-const IGV_RATE = 0.18;
+import { calcularTotalesIgv } from '../../shared/utils/igvCalculator';
 
 export default function OrderCreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { items, updateCantidad, remove, clear, total } = useCartStore();
+  const { items, updateCantidad, remove, clear } = useCartStore();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [observaciones, setObservaciones] = useState('');
   const [clienteId, setClienteId] = useState<number | null>(null);
@@ -50,11 +49,10 @@ export default function OrderCreatePage() {
   });
 
   const totales = useMemo(() => {
-    const totalVal = total();
-    const subtotal = totalVal / (1 + IGV_RATE);
-    const igv = subtotal * IGV_RATE;
-    return { subtotal, igv, total: totalVal };
-  }, [total]);
+    return calcularTotalesIgv(
+      items.map(i => ({ cantidad: i.cantidad, precio_unitario: i.precio_unitario })),
+    );
+  }, [items]);
 
   const handleSubmit = (estado: 'borrador' | 'confirmada') => {
     setSubmitError(null);

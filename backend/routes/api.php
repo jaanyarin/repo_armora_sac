@@ -62,10 +62,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [SaleController::class, 'index'])->middleware('permission:ver-ventas');
         Route::get('{sale}', [SaleController::class, 'show'])->middleware('permission:ver-ventas');
         Route::post('/', [SaleController::class, 'store'])->middleware('permission:crear-ventas');
-        Route::put('{sale}', [SaleController::class, 'update'])->middleware('permission:ver-ventas');
+        Route::put('{sale}', [SaleController::class, 'update'])->middleware('permission:editar-ventas');
         Route::post('{sale}/confirmar', [SaleController::class, 'confirmar'])->middleware('permission:crear-ventas');
         Route::post('{sale}/anular', [SaleController::class, 'anular'])->middleware('permission:anular-ventas');
-        Route::delete('{sale}', [SaleController::class, 'destroy'])->middleware('permission:ver-ventas');
+        Route::delete('{sale}', [SaleController::class, 'destroy'])->middleware('permission:eliminar-ventas');
         Route::post('{sale}/nota-credito', [SaleController::class, 'emitirNotaCredito'])->middleware('permission:nota-credito');
     });
 

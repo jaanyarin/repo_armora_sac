@@ -208,4 +208,116 @@ class SaleTest extends TestCase
             ->postJson('/api/sales', $this->validSalePayload())
             ->assertForbidden();
     }
+
+    public function test_vendedor_can_update_sale_with_editar_ventas(): void
+    {
+        $sale = $this->asVendedor()
+            ->postJson('/api/sales', $this->validSalePayload())
+            ->json();
+
+        $payload = $this->validSalePayload();
+        $payload['observaciones'] = 'Venta editada por vendedor';
+
+        $this->asVendedor()
+            ->putJson("/api/sales/{$sale['id']}", $payload)
+            ->assertOk()
+            ->assertJsonPath('observaciones', 'Venta editada por vendedor');
+    }
+
+    public function test_vendedor_cannot_delete_sale_without_eliminar_ventas(): void
+    {
+        $sale = $this->asVendedor()
+            ->postJson('/api/sales', $this->validSalePayload())
+            ->json();
+
+        $this->asVendedor()
+            ->deleteJson("/api/sales/{$sale['id']}")
+            ->assertForbidden();
+    }
+
+    public function test_admin_can_delete_sale_with_eliminar_ventas(): void
+    {
+        $sale = $this->asVendedor()
+            ->postJson('/api/sales', $this->validSalePayload())
+            ->json();
+
+        $this->asAdmin()
+            ->deleteJson("/api/sales/{$sale['id']}")
+            ->assertOk()
+            ->assertJsonPath('message', 'Venta eliminada.');
+    }
+
+    public function test_logistica_cannot_update_sale(): void
+    {
+        $sale = $this->asVendedor()
+            ->postJson('/api/sales', $this->validSalePayload())
+            ->json();
+
+        $payload = $this->validSalePayload();
+        $payload['observaciones'] = 'Intento de edición no autorizado';
+
+        $this->asLogistica()
+            ->putJson("/api/sales/{$sale['id']}", $payload)
+            ->assertForbidden();
+    }
+
+    public function test_igv_calculation_is_consistent_subtotal_igv_total(): void
+    {
+        $payload = $this->validSalePayload();
+        $payload['items'] = [
+            [
+                'producto_id' => $this->productoId,
+                'unidad_medida_id' => $this->unidadMedidaId,
+                'cantidad' => 3,
+                'precio_unitario' => 118.00,
+            ],
+            [
+                'producto_id' => $this->productoId,
+                'unidad_medida_id' => $this->unidadMedidaId,
+                'cantidad' => 1,
+                'precio_unitario' => 236.00,
+            ],
+        ];
+
+        $response = $this->asVendedor()
+            ->postJson('/api/sales', $payload)
+            ->assertCreated();
+
+        $data = $response->json();
+
+        $expectedSubtotal = round((3 * 118.00 + 1 * 236.00) / 1.18, 2);
+        $expectedIgv = round((3 * 118.00 + 1 * 236.00) - $expectedSubtotal, 2);
+        $expectedTotal = round($expectedSubtotal + $expectedIgv, 2);
+
+        $this->assertEqualsWithDelta($expectedSubtotal, (float) $data['subtotal'], 0.01);
+        $this->assertEqualsWithDelta($expectedIgv, (float) $data['igv'], 0.01);
+        $this->assertEqualsWithDelta($expectedTotal, (float) $data['total'], 0.01);
+
+        $this->assertEqualsWithDelta(
+            (float) $data['subtotal'] + (float) $data['igv'],
+            (float) $data['total'],
+            0.01,
+            'subtotal + igv debe ser igual a total'
+        );
+
+        $sumItemSubtotal = 0.0;
+        $sumItemIgv = 0.0;
+        $sumItemTotal = 0.0;
+        foreach ($data['items'] as $item) {
+            $sumItemSubtotal += (float) $item['subtotal'];
+            $sumItemIgv += (float) $item['igv'];
+            $sumItemTotal += (float) $item['total'];
+
+            $this->assertEqualsWithDelta(
+                (float) $item['subtotal'] + (float) $item['igv'],
+                (float) $item['total'],
+                0.01,
+                'subtotal + igv del item debe ser igual a total del item'
+            );
+        }
+
+        $this->assertEqualsWithDelta((float) $data['subtotal'], $sumItemSubtotal, 0.02);
+        $this->assertEqualsWithDelta((float) $data['igv'], $sumItemIgv, 0.02);
+        $this->assertEqualsWithDelta((float) $data['total'], $sumItemTotal, 0.02);
+    }
 }

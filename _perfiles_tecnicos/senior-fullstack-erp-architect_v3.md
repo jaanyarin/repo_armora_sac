@@ -14,7 +14,7 @@
 - **Stack vigente:** Laravel 13.8 + PHP 8.3 + PostgreSQL 16 + Redis 7 (backend) · React 19 + Vite 8 + TypeScript 6 + MUI 7 (frontend).
 - **Estado:** 🟡 **Fase 1A completada**. Auth + Catalog + Customers + Products operativos (backend + admin UI + tests). Faltan 6 módulos de negocio y todo el stack SUNAT.
 - **Siguiente hito propuesto:** HITO-003 — **Sales + Inventory** (desbloquea SUNAT/Greenter y el Portal Cliente).
-- **Documentación funcional:** ver `_docs_implementacion/INDICE_MAESTRO.md` (35+ docs), `_docs_desarrollo/HITO-001`, `HITO-002` y `AGENTS.md` en raíz.
+- **Documentación funcional:** ver `_docs_implementacion/INDICE_MAESTRO.md` (15 docs reales en disco + 4 en `_docs_desarrollo/`), `_docs_desarrollo/HITO-001`, `HITO-002`, `HITO-003` y `AGENTS.md` en raíz.
 
 ---
 
@@ -50,8 +50,8 @@
 | **Catalog** (24 endpoints) | ✅ `CatalogController` 25 métodos sobre tablas `dim_*` | ✅ `catalogApi` + tipos en `shared/types` | — | ❌ | Datos seed (PEN/USD, 50 UM, 25 departamentos, 36 distritos Lima, 18 afección IGV, etc.) |
 | **Customers** | ✅ CRUD completo + SoftDeletes + paginación + búsqueda | ✅ List (DataGrid) + Form (RHF + Zod) | — | ✅ 6 casos | Modelo con relaciones a `dim_*` |
 | **Products** | ✅ CRUD completo + SoftDeletes + filtros | ✅ List + Form con selectores de catálogo | — | ✅ 5 casos | Precios S/ + USD, costo, stock |
-| **Sales** | ❌ | ❌ (placeholder en AdminLayout) | ❌ | — | **HITO-003** — crítico |
-| **Inventory** | ❌ | ❌ (placeholder) | ❌ | — | **HITO-003** |
+| **Sales** | ✅ CRUD + SoftDeletes + ULID + IGV + IGV 18% + RBAC | ✅ List (DataGrid) + Form (RHF + Zod + items dinámicos) | ✅ Cart + Checkout + Historial | ✅ 13 casos | Cálculo IGV unificado (C-03) + 5 permisos RBAC (ver/crear/editar/anular/eliminar + nota-credito). 8 endpoints REST. |
+| **Inventory** | ✅ Stock + Movimientos + Kardex + dim_almacen | ⏳ Placeholder (próximo) | — | ✅ 2 casos | SoftDeletes + ULID. Event `SaleConfirmed` → Listener `DescontarStock`. 3 endpoints REST. |
 | **Purchases** | ❌ | ❌ | ❌ | — | HITO-004 |
 | **Finance / PLE** | ❌ | ❌ | ❌ | — | HITO-005 |
 | **Logistics** | ❌ | ❌ (placeholder) | ❌ | — | HITO-005 |
@@ -59,7 +59,7 @@
 | **Notifications** | ❌ | ❌ | ❌ | — | Diferido |
 | **Portal Cliente/Proveedor** | — | — | ⚠️ Solo `PortalLayout.tsx` (esqueleto); sin rutas | — | HITO-003 (catálogo + pedido) |
 
-**Tests totales:** 16 casos (PHPUnit). `composer test` corre feature tests; frontend sin test runner.
+**Tests totales:** 16 casos PHPUnit (Hito 002) + 15 casos PHPUnit (Hito 003: 13 Sales + 2 Inventory) = 31 casos backend. `composer test` corre feature tests; frontend con Vitest (6 casos) + Playwright (8 E2E).
 
 ### 1.3 Cobertura del dominio SUNAT
 
@@ -307,13 +307,13 @@ Continuar la **Fase 1** del plan original con el orden ajustado al estado real:
 | Tema | Documento |
 |---|---|
 | Comandos y arquitectura general | `AGENTS.md` (raíz) |
-| Hitos previos | `_docs_desarrollo/HITO-001-fundacion-proyecto.md`, `HITO-002-customers-products.md` |
-| Análisis legacy + ADRs | `_docs_implementacion/05_especificaciones_tecnicas/architecture-decisions.md` |
-| Stack detallado | `_docs_implementacion/05_especificaciones_tecnicas/stack-tecnico.md` |
-| Modelo de datos | `_docs_implementacion/02_arquitectura_datos/database-schema.sql` |
-| Módulos funcional | `_docs_implementacion/03_mapa_funcionalidades/` (uno por módulo) |
-| API REST | `_docs_implementacion/06_api_endpoints/ENDPOINTS_COMPLETE_MAPPING.md` |
-| Compliance SUNAT | `_docs_implementacion/07_seguridad_compliance/sunat-compliance.md` |
+| Hitos previos | `_docs_desarrollo/HITO-001-fundacion-proyecto.md`, `HITO-002-customers-products.md`, `HITO-003-sales-inventory.md` |
+| Análisis legacy + ADRs | `_docs_implementacion/01_analisis_tecnico/backend-analysis.md`, `frontend-analysis.md` |
+| Stack detallado | `_perfiles_tecnicos/senior-fullstack-erp-architect_v3.md` sección 2 |
+| Modelo de datos | `backend/database/migrations/` (DDL real ejecutado) + `_docs_implementacion/02_arquitectura_datos/database-analysis.md` |
+| Módulos funcional | `backend/app/Modules/<Name>/` (código fuente) + `_perfiles_tecnicos/senior-fullstack-erp-architect_v3.md` sección 1.2 |
+| API REST | `_docs_implementacion/06_api_endpoints/ENDPOINTS_COMPLETE_MAPPING.md` (legacy) + `backend/routes/api.php` (actual) |
+| Compliance SUNAT | **Pendiente de creación** (no hay docs; se implementa en Hito 003+) |
 | Perfil de puesto (genérico) | `_perfiles_tecnicos/senior-fullstack-erp-architect_v1.md`, `v2.md` |
 
 ---

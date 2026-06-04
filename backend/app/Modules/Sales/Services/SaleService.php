@@ -56,9 +56,7 @@ class SaleService
             $sale = Sale::create($data);
 
             foreach ($data['items'] ?? [] as $index => $item) {
-                $lineTotal = (float) $item['cantidad'] * (float) $item['precio_unitario'];
-                $lineIgv = round($lineTotal * 0.18, 2);
-                $lineSubtotal = round($lineTotal - $lineIgv, 2);
+                $lineTotals = $this->calcularItem($item);
 
                 SaleItem::create([
                     'venta_id' => $sale->id,
@@ -68,9 +66,9 @@ class SaleService
                     'cantidad' => $item['cantidad'],
                     'precio_unitario' => $item['precio_unitario'],
                     'descuento_linea' => $item['descuento_linea'] ?? 0,
-                    'subtotal' => $lineSubtotal,
-                    'igv' => $lineIgv,
-                    'total' => $lineTotal,
+                    'subtotal' => $lineTotals['subtotal'],
+                    'igv' => $lineTotals['igv'],
+                    'total' => $lineTotals['total'],
                     'observaciones' => $item['observaciones'] ?? null,
                 ]);
             }
@@ -99,9 +97,7 @@ class SaleService
                 $data['total'] = $total;
 
                 foreach ($data['items'] as $index => $item) {
-                    $lineTotal = (float) $item['cantidad'] * (float) $item['precio_unitario'];
-                    $lineIgv = round($lineTotal * 0.18, 2);
-                    $lineSubtotal = round($lineTotal - $lineIgv, 2);
+                    $lineTotals = $this->calcularItem($item);
 
                     SaleItem::create([
                         'venta_id' => $sale->id,
@@ -111,9 +107,9 @@ class SaleService
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $item['precio_unitario'],
                         'descuento_linea' => $item['descuento_linea'] ?? 0,
-                        'subtotal' => $lineSubtotal,
-                        'igv' => $lineIgv,
-                        'total' => $lineTotal,
+                        'subtotal' => $lineTotals['subtotal'],
+                        'igv' => $lineTotals['igv'],
+                        'total' => $lineTotals['total'],
                         'observaciones' => $item['observaciones'] ?? null,
                     ]);
                 }
@@ -166,17 +162,47 @@ class SaleService
         $sale->delete();
     }
 
+    public static function calcularLineaIgv(float $cantidad, float $precioUnitario, float $descuentoLinea = 0.0): array
+    {
+        $totalLinea = round($cantidad * $precioUnitario - $descuentoLinea, 2);
+        $gravada    = round($totalLinea / 1.18, 2);
+        $igv        = round($gravada * 0.18, 2);
+
+        return [
+            'total_linea' => $totalLinea,
+            'gravada'     => $gravada,
+            'igv'         => $igv,
+            'total'       => round($gravada + $igv, 2),
+        ];
+    }
+
+    private function calcularItem(array $item): array
+    {
+        $descuento = (float) ($item['descuento_linea'] ?? 0);
+        $line = self::calcularLineaIgv(
+            (float) $item['cantidad'],
+            (float) $item['precio_unitario'],
+            $descuento,
+        );
+        return [
+            'subtotal' => $line['gravada'],
+            'igv' => $line['igv'],
+            'total' => $line['total_linea'],
+        ];
+    }
+
     private function calcularTotales(array $items): array
     {
-        $subtotalBase = 0;
+        $subtotalBase = 0.0;
+        $igvTotal = 0.0;
+        $total = 0.0;
         foreach ($items as $item) {
-            $lineTotal = (float) $item['cantidad'] * (float) $item['precio_unitario'];
-            $lineSubtotal = round($lineTotal / 1.18, 2);
-            $subtotalBase += $lineSubtotal;
+            $line = $this->calcularItem($item);
+            $subtotalBase += $line['subtotal'];
+            $igvTotal += $line['igv'];
+            $total += $line['total'];
         }
-        $igv = round($subtotalBase * 0.18, 2);
-        $total = round($subtotalBase + $igv, 2);
-        return [$subtotalBase, $igv, $total];
+        return [round($subtotalBase, 2), round($igvTotal, 2), round($total, 2)];
     }
 
     private function generateCode(): string
