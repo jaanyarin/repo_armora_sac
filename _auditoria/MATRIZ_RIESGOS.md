@@ -1,7 +1,7 @@
 # Matriz de Riesgos — ARMORA NextGen
 
 **Documento vivo.** Cada hallazgo identificado en gate reviews se registra aquí con severidad, estado, y plan de remediación.  
-**Última actualización:** 2026-06-04
+**Última actualización:** 2026-06-04 (re-auditoría)
 
 ---
 
@@ -9,11 +9,11 @@
 
 | Severidad | Abiertos | Cerrados | Total |
 |---|---|---|---|
-| 🔴 Crítico | 3 | 0 | 3 |
+| 🔴 Crítico | 0 | 3 | 3 |
 | 🟠 Alto | 11 | 0 | 11 |
 | 🟡 Medio | 8 | 0 | 8 |
 | 🟢 Bajo | 3 | 0 | 3 |
-| **Total** | **25** | **0** | **25** |
+| **Total** | **22** | **3** | **25** |
 
 ---
 
@@ -21,9 +21,9 @@
 
 | ID | HITO | Hallazgo | Archivo | Remedio propuesto | Responsable | Estado |
 |---|---|---|---|---|---|---|
-| C-01 | 003 | Documentación publicitada (35+ docs) no existe en disco. Los directorios `05_especificaciones_tecnicas/` y `07_seguridad_compliance/` están vacíos. | `_docs_implementacion/` | Eliminar referencias falsas del índice o crear los documentos. Verificar que cada archivo listado en `INDICE_MAESTRO.md` exista. | Arquitecto | 🔴 Abierto |
-| C-02 | 003 | Permisos RBAC incorrectos: `PUT /sales/{sale}` y `DELETE /sales/{sale}` requieren `permission:ver-ventas` en vez de `editar-ventas` y `eliminar-ventas` respectivamente. | `backend/routes/api.php:65,68` | Corregir los middleware: `PUT → editar-ventas`, `DELETE → eliminar-ventas`. | Arquitecto | 🔴 Abierto |
-| C-03 | 003 | Cálculo de IGV inconsistente: `SaleService::create()` calcula IGV como `lineTotal * 0.18` (incorrecto, ~16.27%) mientras `calcularTotales()` usa `lineTotal / 1.18 * 0.18` (correcto). Los valores guardados difieren según el path. | `backend/app/Modules/Sales/Services/SaleService.php:60,174` | Unificar cálculo: sacar a método privado único `calcularLineaIgv(cantidad, precioUnitario)` que use la fórmula correcta `gravada = total / 1.18; igv = gravada * 0.18`. | Arquitecto | 🔴 Abierto |
+| C-01 | 003 | Documentación publicitada (35+ docs) no existe en disco. Los directorios `05_especificaciones_tecnicas/` y `07_seguridad_compliance/` están vacíos. | `_docs_implementacion/` | Eliminar referencias falsas del índice o crear los documentos. Verificar que cada archivo listado en `INDICE_MAESTRO.md` exista. | Arquitecto | ✅ Cerrado — Corregido commit `5ba310b`. INDICE_MAESTRO.md reescrito: 15 reales + 20 pendientes. v3 perfil referencias corregidas. |
+| C-02 | 003 | Permisos RBAC incorrectos: `PUT /sales/{sale}` y `DELETE /sales/{sale}` requieren `permission:ver-ventas` en vez de `editar-ventas` y `eliminar-ventas` respectivamente. | `backend/routes/api.php:65,68` | Corregir los middleware: `PUT → editar-ventas`, `DELETE → eliminar-ventas`. | Arquitecto | ✅ Cerrado — Corregido commit `5ba310b`. PUT ahora usa `editar-ventas`, DELETE usa `eliminar-ventas`. Nuevo permiso en seeder. +4 tests. |
+| C-03 | 003 | Cálculo de IGV inconsistente: `SaleService::create()` calcula IGV como `lineTotal * 0.18` (incorrecto, ~16.27%) mientras `calcularTotales()` usa `lineTotal / 1.18 * 0.18` (correcto). Los valores guardados difieren según el path. | `backend/app/Modules/Sales/Services/SaleService.php:60,174` | Unificar cálculo: sacar a método privado único `calcularLineaIgv(cantidad, precioUnitario)` que use la fórmula correcta `gravada = total / 1.18; igv = gravada * 0.18`. | Arquitecto | ✅ Cerrado — Corregido commit `5ba310b`. Método único `calcularLineaIgv()`. Migración correctiva. Frontend `igvCalculator.ts`. +1 test. 15/15 tests Sales+Inventory pasan. |
 
 ---
 
@@ -75,3 +75,4 @@
 | Fecha | Acción | Detalle |
 |---|---|---|
 | 2026-06-04 | Creación inicial | 25 hallazgos registrados de HITO 003 (3C + 11A + 8M + 3B) |
+| 2026-06-04 | Re-auditoría — Cierre C-01, C-02, C-03 | Verificados en commit `5ba310b`. 15/15 tests Sales+Inventory ✅. INDICE_MAESTRO honesto. RBAC granular corregido. IGV unificado. HITO 003 → 🟡 Aprobado condicional. 22 hallazgos abiertos restantes. |

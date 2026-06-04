@@ -15,7 +15,8 @@ class StoreSaleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cliente_id' => ['required', 'integer', 'exists:customers,id'],
+            // A-07: SoftDeletes — filtrar registros eliminados lógicamente
+            'cliente_id' => ['required', 'integer', Rule::exists('customers', 'id')->whereNull('deleted_at')],
             'documento_tipo_id' => ['nullable', 'integer', 'exists:dim_documento_tipo,id'],
             'serie' => ['nullable', 'string', 'max:10'],
             'numero' => ['nullable', 'string', 'max:20'],
@@ -26,7 +27,8 @@ class StoreSaleRequest extends FormRequest
             'observaciones' => ['nullable', 'string', 'max:1000'],
             'estado' => ['nullable', Rule::in(['borrador', 'confirmada'])],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.producto_id' => ['required', 'integer', 'exists:products,id'],
+            // products también usa SoftDeletes
+            'items.*.producto_id' => ['required', 'integer', Rule::exists('products', 'id')->whereNull('deleted_at')],
             'items.*.unidad_medida_id' => ['required', 'integer', 'exists:dim_unidad_medida,id'],
             'items.*.cantidad' => ['required', 'numeric', 'min:0.01'],
             'items.*.precio_unitario' => ['required', 'numeric', 'min:0'],

@@ -84,8 +84,10 @@ class SaleService
     public function update(Sale $sale, array $data): Sale
     {
         return DB::transaction(function () use ($sale, $data) {
-            if (in_array($sale->estado, ['anulada', 'pagada'], true)) {
-                throw new \DomainException('No se puede modificar una venta anulada o pagada completamente.');
+            if (in_array($sale->estado, ['anulada', 'pagada', 'confirmada'], true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'estado' => ['No se puede modificar una venta anulada, pagada o confirmada.'],
+                ]);
             }
 
             if (isset($data['items'])) {
@@ -115,11 +117,19 @@ class SaleService
                 }
             }
 
+            // A-10: mantener saldo_pendiente coherente con el nuevo total
+            // (al pasar de borrador a confirmada o al cambiar total, se ajusta)
+            if (array_key_exists('total', $data) && !array_key_exists('saldo_pendiente', $data)) {
+                $data['saldo_pendiente'] = $data['total'];
+            }
+
             $previousEstado = $sale->estado;
             $sale->update($data);
             $sale->refresh();
 
             if ($previousEstado !== 'confirmada' && $sale->estado === 'confirmada') {
+                app(\App\Modules\Inventory\Services\InventoryService::class)
+                    ->descontarPorVenta($sale->fresh());
                 event(new SaleConfirmed($sale));
             }
 
@@ -135,7 +145,16 @@ class SaleService
 
         return DB::transaction(function () use ($sale) {
             $sale->update(['estado' => 'confirmada']);
+
+            // A-04: ejecutar el side-effect crítico (descontar stock) DENTRO de la
+            // misma transacción que cambia el estado. Si algo falla, el rollback
+            // deja la venta en borrador. El evento se dispara solo para
+            // observabilidad post-commit (Notification, Webhook, AuditLog externo).
+            app(\App\Modules\Inventory\Services\InventoryService::class)
+                ->descontarPorVenta($sale->fresh());
+
             event(new SaleConfirmed($sale));
+
             return $sale->fresh();
         });
     }
@@ -152,7 +171,10 @@ class SaleService
                     ->reingresarPorVenta($sale);
             }
 
-            $sale->update(['estado' => 'anulada']);
+            $sale->update([
+                'estado' => 'anulada',
+                'saldo_pendiente' => 0,
+            ]);
             return $sale->fresh();
         });
     }
@@ -208,7 +230,7 @@ class SaleService
     private function generateCode(): string
     {
         $prefix = 'V';
-        $last = Sale::withTrashed()->count() + 1;
-        return $prefix . '-' . date('Y') . '-' . Str::padLeft($last, 5, '0');
+        $next = (int) DB::selectOne("SELECT nextval('sales_codigo_seq') AS n")->n;
+        return $prefix . '-' . date('Y') . '-' . Str::padLeft((string) $next, 5, '0');
     }
 }

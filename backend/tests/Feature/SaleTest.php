@@ -320,4 +320,121 @@ class SaleTest extends TestCase
         $this->assertEqualsWithDelta((float) $data['igv'], $sumItemIgv, 0.02);
         $this->assertEqualsWithDelta((float) $data['total'], $sumItemTotal, 0.02);
     }
+
+    public function test_generateCode_uses_atomic_sequence(): void
+    {
+        $codes = [];
+        for ($i = 0; $i < 5; $i++) {
+            $sale = $this->asVendedor()
+                ->postJson('/api/sales', $this->validSalePayload())
+                ->assertCreated()
+                ->json();
+            $codes[] = $sale['codigo'];
+        }
+
+        $this->assertCount(5, array_unique($codes), 'Los códigos deben ser únicos (secuencia atómica)');
+
+        $numeros = array_map(function ($c) {
+            return (int) substr($c, -5);
+        }, $codes);
+        sort($numeros);
+
+        $consecutivos = true;
+        for ($i = 1; $i < count($numeros); $i++) {
+            if ($numeros[$i] - $numeros[$i - 1] !== 1) {
+                $consecutivos = false;
+                break;
+            }
+        }
+        $this->assertTrue($consecutivos, 'Los códigos deben ser consecutivos (secuencia PostgreSQL). Obtuve: ' . implode(',', $numeros));
+    }
+
+    public function test_listener_failure_rolls_back_sale_confirmation(): void
+    {
+        $sale = $this->asVendedor()
+            ->postJson('/api/sales', $this->validSalePayload())
+            ->json();
+
+        $stockInicial = \App\Modules\Products\Models\Product::find($this->productoId)->stock_actual;
+
+        $this->app->bind(\App\Modules\Inventory\Services\InventoryService::class, function () {
+            $mock = new class extends \App\Modules\Inventory\Services\InventoryService {
+                public function descontarPorVenta(\App\Modules\Sales\Models\Sale $sale): void
+                {
+                    throw new \RuntimeException('Forzando fallo del listener (test A-04)');
+                }
+            };
+            return $mock;
+        });
+
+        $this->asVendedor()
+            ->postJson("/api/sales/{$sale['id']}/confirmar")
+            ->assertStatus(500);
+
+        $saleReload = \App\Modules\Sales\Models\Sale::find($sale['id']);
+        $this->assertEquals('borrador', $saleReload->estado, 'La venta debe quedar en borrador por el rollback');
+
+        $stockFinal = \App\Modules\Products\Models\Product::find($this->productoId)->stock_actual;
+        $this->assertEquals((float) $stockInicial, (float) $stockFinal, 'El stock no debe haberse modificado por el rollback');
+    }
+
+    public function test_sale_with_soft_deleted_customer_is_rejected(): void
+    {
+        $clienteSoftDeleted = \App\Modules\Customers\Models\Customer::create([
+            'codigo' => 'CLI-SOFT-DELETE',
+            'tipo_documento' => '1',
+            'numero_documento' => '99999999',
+            'nombre_completo' => 'Cliente Soft Deleted',
+            'activo' => true,
+        ]);
+        $clienteSoftDeleted->delete();
+
+        $payload = $this->validSalePayload();
+        $payload['cliente_id'] = $clienteSoftDeleted->id;
+
+        $this->asVendedor()
+            ->postJson('/api/sales', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['cliente_id']);
+    }
+
+    public function test_sale_with_soft_deleted_product_is_rejected(): void
+    {
+        $productoSoftDeleted = \App\Modules\Products\Models\Product::create([
+            'codigo' => 'PROD-SOFT-DELETE',
+            'nombre' => 'Producto Soft Deleted',
+            'unidad_medida_id' => $this->unidadMedidaId,
+            'precio_venta' => 50,
+            'stock_actual' => 10,
+            'activo' => true,
+        ]);
+        $productoSoftDeleted->delete();
+
+        $payload = $this->validSalePayload();
+        $payload['items'][0]['producto_id'] = $productoSoftDeleted->id;
+
+        $this->asVendedor()
+            ->postJson('/api/sales', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['items.0.producto_id']);
+    }
+
+    public function test_update_sale_confirmada_is_rejected(): void
+    {
+        $sale = $this->asVendedor()
+            ->postJson('/api/sales', $this->validSalePayload())
+            ->json();
+
+        $this->asVendedor()
+            ->postJson("/api/sales/{$sale['id']}/confirmar")
+            ->assertOk();
+
+        $payload = $this->validSalePayload();
+        $payload['observaciones'] = 'Intento de edición post-confirmación';
+
+        $this->asVendedor()
+            ->putJson("/api/sales/{$sale['id']}", $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['estado']);
+    }
 }

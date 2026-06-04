@@ -24,7 +24,8 @@ class UpdateSaleRequest extends FormRequest
             'descuento_global' => ['nullable', 'numeric', 'min:0'],
             'observaciones' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.producto_id' => ['required', 'integer', 'exists:products,id'],
+            // A-07: SoftDeletes — filtrar registros eliminados lógicamente
+            'items.*.producto_id' => ['required', 'integer', Rule::exists('products', 'id')->whereNull('deleted_at')],
             'items.*.unidad_medida_id' => ['required', 'integer', 'exists:dim_unidad_medida,id'],
             'items.*.cantidad' => ['required', 'numeric', 'min:0.01'],
             'items.*.precio_unitario' => ['required', 'numeric', 'min:0'],

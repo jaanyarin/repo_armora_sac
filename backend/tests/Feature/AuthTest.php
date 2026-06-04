@@ -100,4 +100,18 @@ class AuthTest extends TestCase
             ->postJson('/api/auth/logout')
             ->assertOk();
     }
+
+    public function test_login_is_rate_limited_after_5_attempts(): void
+    {
+        $payload = ['login' => 'admin', 'password' => 'wrong'];
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/auth/login', $payload)
+                ->assertUnprocessable();
+        }
+
+        $this->postJson('/api/auth/login', $payload)
+            ->assertStatus(429)
+            ->assertJsonStructure(['message']);
+    }
 }

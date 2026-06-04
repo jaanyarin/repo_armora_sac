@@ -14,14 +14,6 @@ class DescontarStock
 
     public function handle(SaleConfirmed $event): void
     {
-        try {
-            $this->inventoryService->descontarPorVenta($event->sale);
-        } catch (\Throwable $e) {
-            Log::error('Error descontando stock para venta', [
-                'venta_id' => $event->sale->id,
-                'error' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
+        $this->inventoryService->descontarPorVenta($event->sale);
     }
 }

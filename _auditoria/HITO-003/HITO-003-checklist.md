@@ -1,8 +1,8 @@
 # Checklist de Gates — HITO 003 (Sales + Inventory)
 
-**Fecha de evaluación:** 2026-06-04  
+**Fecha de re-evaluación:** 2026-06-04  
 **Evaluador:** Senior Code & Architecture Quality Auditor  
-**Estado:** 🔴 3 gates críticos no pasan
+**Estado:** 🟡 Aprobado con observaciones — 3 críticos corregidos. 11 altos pendientes.
 
 ---
 
@@ -24,12 +24,12 @@
 | Criterio | Estado | Evidencia |
 |---|---|---|
 | Cada endpoint con `auth:sanctum` | ✅ | Grupo completo protegido |
-| Cada endpoint con `permission:*` específico | ❌ | `PUT` y `DELETE` con `ver-ventas` incorrecto |
-| Cada acción sobre modelo con `$this->authorize()` | ❌ | `index()` no llama a `authorize('viewAny')` |
-| Policy con métodos por acción de negocio | ⚠️ | Falta `confirmar()` en SalePolicy |
-| Permisos en seeder para todos los roles | ✅ | Vendedor, Admin, Jefe-Almacen |
+| Cada endpoint con `permission:*` específico | ✅ | `PUT`→`editar-ventas`, `DELETE`→`eliminar-ventas` (C-02 corregido commit `5ba310b`) |
+| Cada acción sobre modelo con `$this->authorize()` | ❌ | `index()` no llama a `authorize('viewAny')` — A-11 pendiente |
+| Policy con métodos por acción de negocio | ⚠️ | Falta `confirmar()` en SalePolicy — A-08 pendiente |
+| Permisos en seeder para todos los roles | ✅ | Vendedor, Admin, Jefe-Almacen. Nuevo `eliminar-ventas` solo Admin/Super-Admin. |
 | Permisos en kebab-case | ✅ | `ver-ventas`, `crear-ventas`, etc. |
-| **Resultado** | ❌ | C-02 y A-11 |
+| **Resultado** | ⚠️ | C-02 corregido ✅. Pendientes A-08 y A-11. |
 
 ---
 
@@ -91,11 +91,12 @@
 
 | Criterio | Estado | Evidencia |
 |---|---|---|
-| Documentos listados existen en disco | ❌ | 35 publicitados, 16 existen |
+| Documentos listados existen en disco | ✅ | INDICE_MAESTRO.md reescrito: 15 reales + 20 pendientes (C-01 corregido commit `5ba310b`) |
 | ADRs con formato estándar | ✅ | ADR-008 correcto |
 | HITO tiene log de cierre | ✅ | HITO-003-sales-inventory.md |
+| HITO-AUDIT tiene log de correcciones | ✅ | HITO-AUDIT-001-correcciones-auditor.md |
 | AGENTS.md actualizado | ✅ | Refleja estado real |
-| **Resultado** | ❌ | C-01 |
+| **Resultado** | ✅ | C-01 corregido |
 
 ---
 
@@ -115,10 +116,11 @@
 
 | Criterio | Estado | Evidencia |
 |---|---|---|
-| IGV fórmula única | ❌ | C-03: dos fórmulas distintas |
-| IGV no hardcodeado | ❌ | `0.18` hardcodeado en 3 lugares |
+| IGV fórmula única | ✅ | `calcularLineaIgv()` fuente única en backend + `igvCalculator.ts` en frontend (C-03 corregido commit `5ba310b`) |
+| IGV no hardcodeado | ❌ | `0.18` hardcodeado en backend y frontend — M-06 pendiente (usar `brick/money` o constante configurable) |
 | Catálogos SUNAT por ID | ✅ | `dim_tipo_afeccion_igv`, `dim_moneda` |
-| **Resultado** | ❌ | C-03 + M-06 |
+| Migración correctiva aplicada | ✅ | `2026_06_04_170000_recalcular_igv_formula_unica.php` |
+| **Resultado** | ⚠️ | C-03 corregido ✅. Pendiente M-06 (hardcodeo de tasa). |
 
 ---
 
@@ -165,12 +167,16 @@ No auditado en esta ronda. Pendiente para revisión complementaria.
 
 ---
 
-## Resumen final
+## Resumen final (re-auditoría)
 
 | Gates que pasan | Gates que no pasan | Gates con observaciones |
 |---|---|---|
-| G-ARQ, G-TEST | G-RBAC, G-EVT, G-TX, G-DOC, G-SUNAT, G-OWASP | G-FORM, G-API, G-LOGS, G-PERF |
+| G-ARQ, G-DOC, G-SUNAT | G-EVT, G-TX, G-OWASP | G-RBAC, G-FORM, G-API, G-LOGS, G-PERF, G-TEST |
+
+**Leyenda:** ✅ = corregido desde auditoría inicial  
+**Pendientes críticos:** G-EVT (A-04), G-TX (A-01), G-OWASP (A-05)  
+**Próximo gate:** HITO-004 (Purchases + Finance)
 
 ---
 
-*Checklist HITO 003 — Versión 1.0 — 2026-06-04*
+*Checklist HITO 003 — Versión 2.0 (re-auditoría) — 2026-06-04*

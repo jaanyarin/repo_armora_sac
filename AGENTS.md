@@ -18,7 +18,7 @@
 
 ## Estado actual del proyecto
 
-**Hito 003 en progreso** — Sales + Inventory (backend completo + frontend Admin/Portal + ADR-008).
+**Hito 003 cerrado + Fase 0 auditoría cerrada** — Sales + Inventory completo (backend + Admin/Portal) + 7 fixes auditoría (A-01, A-04, A-05, A-07 + colaterales A-03/A-09/A-10).
 Módulos funcionales: Auth, Catalog, Customers, Products, **Sales, Inventory**.
 Portal Cliente: catálogo público + login + dashboard + **pedidos (carrito + checkout + historial)** con navegación responsive.
 
@@ -141,6 +141,7 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 | ADR-006 | Autoincrement (SERIAL) vs ULID | ✅ Aplicado en `sales_*` e `inventory_movimientos` |
 | ADR-007 | API REST standalone (sin Inertia) | ✅ Decisión tomada |
 | ADR-008 | No hardcodear credenciales en tests — `User::factory() + actingAs()` | ✅ Aplicado |
+| ADR-009 | Remediación intercalada Hito 003→004 en 4 fases (Fase 0 cerrada) | ✅ Fase 0 (A-01/A-04/A-05/A-07 + A-03/A-09/A-10) |
 
 ## Deuda técnica conocida
 
@@ -178,7 +179,7 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 - ✅ Cart store Zustand con persist en localStorage
 - ⏳ `InventoryPage` Admin (solo placeholder, falta stock list + kardex)
 
-**Pendiente Hito 003**:
+**Pendiente Hito 003** (reclasificado al backlog general del proyecto):
 - ❌ Greenter 5.x + envío SOAP a SUNAT
 - ❌ Job asíncrono `SendInvoiceToSunat` con Redis Queue
 - ❌ Inventory Admin completo (stock + kardex)

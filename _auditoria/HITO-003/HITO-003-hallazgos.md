@@ -1,43 +1,36 @@
 # Hallazgos de Auditoría — HITO 003 (Sales + Inventory)
 
-**Fecha:** 2026-06-04  
-**Total:** 25 hallazgos (3 🔴 + 11 🟠 + 8 🟡 + 3 🟢)
+**Fecha:** 2026-06-04 (re-auditoría)  
+**Total:** 25 hallazgos (3 🔴 cerrados + 11 🟠 + 8 🟡 + 3 🟢 = **22 abiertos**)
 
 ---
 
-## 🔴 Críticos (deben remediarse para cerrar el HITO)
+## ✅ Críticos — CORREGIDOS (commit `5ba310b`)
 
-### C-01 — Documentación publicitada no existe en disco
+### C-01 — Documentación publicitada no existe en disco — ✅ CORREGIDO
 
-El `INDICE_MAESTRO.md` publicita 35+ documentos. Solo existen 16 archivos reales. Los directorios `05_especificaciones_tecnicas/` y `07_seguridad_compliance/` están vacíos.
+**Corrección verificada:**
+- `INDICE_MAESTRO.md` reescrito — lista 15 docs reales + 20 pendientes con fase planificada
+- Perfil v3 referencias actualizadas a docs reales
+- Nuevo doc `HITO-AUDIT-001-correcciones-auditor.md` como bitácora
 
-- **Archivo:** `_docs_implementacion/INDICE_MAESTRO.md`
-- **Remediación:** Eliminar las referencias falsas o crear los documentos. No publicitar lo que no existe.
-- **Verificación:** `Get-ChildItem -Recurse _docs_implementacion | Measure-Object` debe coincidir con el conteo del índice.
+### C-02 — Permisos RBAC incorrectos en rutas de ventas — ✅ CORREGIDO
 
-### C-02 — Permisos RBAC incorrectos en rutas de ventas
+**Corrección verificada:**
+- `routes/api.php`: PUT→`editar-ventas`, DELETE→`eliminar-ventas`
+- Seeder: nuevo permiso `eliminar-ventas` (solo Admin/Super-Admin)
+- Seeder idempotente (`firstOrCreate` + `syncPermissions`)
+- +4 tests en SaleTest (vendedor update OK, vendedor delete 403, admin delete OK, logistica update 403)
 
-| Ruta | Permiso actual | Permiso correcto |
-|---|---|---|
-| `PUT /api/sales/{sale}` | `ver-ventas` | `editar-ventas` |
-| `DELETE /api/sales/{sale}` | `ver-ventas` | `eliminar-ventas` |
+### C-03 — Cálculo de IGV inconsistente entre paths — ✅ CORREGIDO
 
-Esto significa que cualquier usuario con `ver-ventas` (permiso de solo lectura) puede modificar y eliminar ventas.
-
-- **Archivo:** `backend/routes/api.php:65,68`
-- **Remediación:** Cambiar los middleware de ruta.
-- **Verificación:** Probar `PUT /api/sales/{id}` con token de usuario con solo `ver-ventas` → debe responder 403.
-
-### C-03 — Cálculo de IGV inconsistente entre paths
-
-`SaleService::create()` línea 60: `$lineIgv = round($lineTotal * 0.18, 2)`  
-`SaleService::calcularTotales()` línea 174: `$lineSubtotal = round($lineTotal / 1.18, 2)`
-
-La primera fórmula es incorrecta (da ~16.27% en vez de 18%), la segunda es correcta. Los valores guardados difieren según el path de código.
-
-- **Archivo:** `backend/app/Modules/Sales/Services/SaleService.php:60,174`
-- **Remediación:** Ver ADR-A001 para la solución detallada.
-- **Verificación:** Crear una venta con `{"items": [{"cantidad": 1, "precio_unitario": 118}]}` → debe dar `subtotal=100, igv=18, total=118`.
+**Corrección verificada:**
+- Método único `calcularLineaIgv()` en `SaleService.php`
+- `create()` y `update()` usan `calcularItem()` → `calcularLineaIgv()`
+- Migración correctiva `2026_06_04_170000_recalcular_igv_formula_unica.php`
+- Frontend: `shared/utils/igvCalculator.ts` con misma fórmula
+- +1 test: `test_igv_calculation_is_consistent` (4 propiedades validadas)
+- 15/15 tests Sales+Inventory pasan (37 assertions)
 
 ---
 
