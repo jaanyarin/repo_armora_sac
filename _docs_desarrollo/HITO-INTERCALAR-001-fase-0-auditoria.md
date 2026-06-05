@@ -292,17 +292,18 @@ en esta Fase 0, queda para cobertura incremental en Fase 1.)
 
 ---
 
-## Pendientes para Fase 1 (Hito 004 — Purchases)
+## Pendientes para Fase 1 (Hito 004 — Purchases) — pendiente de aprobación
 
-1. **A-02**: Frontend `OrderHistoryPage` con skeleton loaders y error boundary.
-2. **A-06**: Inventory Admin UI (stock list + kardex) — placeholder actual.
-3. **A-08**: Plantilla XML UBL 2.1 para facturas (preparación SUNAT).
-4. **A-11**: Queue Redis + worker supervisord.
-5. **Greenter 5.x + envío SOAP a SUNAT** (próximo hito post-004).
-6. Refactorizar listener `DescontarStock` para que se ejecute de forma
-   **explícita** (no implícita via event) si el patrón se replica en
-   `PurchaseConfirmed → AumentarStock`.
-7. Multi-tenancy (`empresa_id`) cuando entremos a Hito 005.
+**Hallazgos 🟠 aún abiertos (deben remediarse antes/durante Fase 1):**
+- **A-02**: Decisión arquitectónica sobre `dim_almacen` (multi-almacén real o eliminar campo).
+- **A-06**: Validación de formato DNI (8 dígitos) / RUC (11 dígitos) en `LoginRequest`.
+- **A-08**: Agregar método `confirmar()` en `SalePolicy` con permiso `confirmar-ventas` separado.
+- **A-11**: Agregar `$this->authorize('viewAny', Sale::class)` en `SaleController::index()`.
+
+**Migración a ADR-010:**
+> Este documento cierra la Fase 0 del ADR-009. Las Fases 1-4 (Purchases,
+> Finance, cleanup) se han trasladado al nuevo ADR-010.
+> Ver: `_docs_desarrollo/ADR-010-hito-004-purchases-finance.md`.
 
 ---
 
