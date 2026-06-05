@@ -18,22 +18,24 @@
 
 ## Estado actual del proyecto
 
-**Hito 003 cerrado + Fase 0 auditoría cerrada** — Sales + Inventory completo (backend + Admin/Portal) + 7 fixes auditoría (A-01, A-04, A-05, A-07 + colaterales A-03/A-09/A-10).
-Módulos funcionales: Auth, Catalog, Customers, Products, **Sales, Inventory**.
+**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) en validación** — Sales + Inventory + **Purchases** completo (backend) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B (HITO-004 Purchases: Proveedor + Compra con IGV fuente única).
+Módulos funcionales: Auth, Catalog, Customers, Products, **Sales, Inventory, Purchases**.
 Portal Cliente: catálogo público + login + dashboard + **pedidos (carrito + checkout + historial)** con navegación responsive.
+
+**Próximo:** Hito 004 Finance (Ola C) ⏸ diferido para validación previa del auditor sobre Ola A+B.
 
 ### Arquitectura backend
 
 ```
-app/Modules/{Auth,Catalog,Customers,Products,Sales,Inventory}/
+app/Modules/{Auth,Catalog,Customers,Products,Sales,Inventory,Purchases}/
 ├── Http/
 │   ├── Controllers/     ← Delgados, delegan en Services
 │   ├── Requests/        ← FormRequests con validación + mensajes español
 │   └── Resources/       ← API Resources con whenLoaded()
 ├── Services/            ← Lógica de negocio (no HTTP acoplado)
-├── Events/              ← SaleConfirmed (Hito 003)
-├── Listeners/           ← DescontarStock (Hito 003)
-├── Policies/            ← SalePolicy, CustomerPolicy, ProductPolicy (Hito 003)
+├── Events/              ← SaleConfirmed (Hito 003), CompraConfirmada (Hito 004 Purchases)
+├── Listeners/           ← DescontarStock, AumentarStock (Hito 004 Purchases, no-op)
+├── Policies/            ← CustomerPolicy, ProductPolicy, SalePolicy, ProveedorPolicy, CompraPolicy, InventoryPolicy
 └── Models/              ← Eloquent + ULIDs + SoftDeletes + LogsActivity
 ```
 
@@ -44,9 +46,12 @@ Principios aplicados (alineados con perfil arquitecto):
 - **API Resources** con `whenLoaded()` para relaciones ✅
 - **Soft Deletes** en Customer, Product, Sale, CreditNote ✅
 - **Catálogos SUNAT** completos (24 tablas dim_*, 458 líneas SQL) ✅
-- **RBAC granular**: 28 permisos, 11 roles, middleware `permission:*` por ruta CRUD ✅
+- **RBAC granular**: 39 permisos, 11 roles, middleware `permission:*` por ruta CRUD ✅
+- **IGV fuente única** backend: `SaleService::calcularLineaIgv()` (importado por `CompraService`) ✅
 - **Login multi-campo**: username, email, DNI o RUC (ADR-004) ✅
-- **Paginación server-side** en Customers, Products, Sales (DataGrid MUI) ✅
+- **Validación DNI/RUC**: regex 8/11 dígitos en `LoginRequest` (A-06) ✅
+- **Multi-almacén mínimo viable**: 1 almacén por defecto, `almacen_id` real en stock y movimientos (A-02) ✅
+- **Paginación server-side** en Customers, Products, Sales, **Compras, Proveedores** (DataGrid MUI + ResourceCollection) ✅
 - **Event-Driven**: `SaleConfirmed` → `DescontarStock` (Hito 003) ✅
 - **Policies de Laravel**: `SalePolicy`, `CustomerPolicy`, `ProductPolicy` (Hito 003) ✅
 - **ULID** en PKs transaccionales: `sales_*`, `inventory_movimientos` (Hito 003) ✅
@@ -138,21 +143,24 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 | ADR-003 | Dual-Frontend Architecture (Admin + Portal) | ✅ Aplicado |
 | ADR-004 | Login multi-campo (username/email/DNI/RUC) | ✅ Aplicado |
 | ADR-005 | Modelos Eloquent para dim_*, CatalogController con DB::table() | 🟡 Transición gradual |
-| ADR-006 | Autoincrement (SERIAL) vs ULID | ✅ Aplicado en `sales_*` e `inventory_movimientos` |
+| ADR-006 | Autoincrement (SERIAL) vs ULID | ✅ Aplicado en `sales_*`, `inventory_movimientos`, `purchases_*` |
 | ADR-007 | API REST standalone (sin Inertia) | ✅ Decisión tomada |
 | ADR-008 | No hardcodear credenciales en tests — `User::factory() + actingAs()` | ✅ Aplicado |
-| ADR-009 | Remediación intercalada Hito 003→004 en 4 fases (Fase 0 cerrada) | ✅ Fase 0 (A-01/A-04/A-05/A-07 + A-03/A-09/A-10) |
+| ADR-009 | Remediación intercalada Hito 003→004 en 4 fases (Fase 0 cerrada) | ✅ Archivado, sucesor ADR-010 |
+| ADR-010 | Hito 004 Purchases + Finance (3 olas) | 🟡 Borrador, Ola A+B ejecutadas, Ola C ⏸ |
 
 ## Deuda técnica conocida
 
 | Item | Impacto | Plan |
 |---|---|---|
 | CatalogController usa `DB::table()` no Eloquent | Inconsistencia arquitectónica | Migrar a Eloquent cuando Catalog tenga Service Layer |
-| Sin Policies de Laravel | RBAC solo por middleware, sin lógica por modelo | Crear en Hito 003 |
-| Sin eventos entre módulos | Customers/Products no emiten eventos | Implementar con Sales |
-| Sin ULID en PKs | Exponen volumen de registros | Migrar al crear tablas transaccionales |
-| Sin audit trail | Sin trazabilidad de cambios en entidades | spatie/laravel-activitylog pendiente |
+| ~~Sin Policies de Laravel~~ | ~~RBAC solo por middleware, sin lógica por modelo~~ | ✅ Creadas en Hito 003-004 (SalePolicy, CustomerPolicy, ProductPolicy, InventoryPolicy, ProveedorPolicy, CompraPolicy) |
+| ~~Sin eventos entre módulos~~ | ~~Customers/Products no emiten eventos~~ | ✅ SaleConfirmed (Hito 003), CompraConfirmada (Hito 004 Purchases) |
+| ~~Sin ULID en PKs~~ | ~~Exponen volumen de registros~~ | ✅ Aplicado en `sales_*`, `inventory_movimientos`, `purchases_*` |
+| ~~Sin audit trail~~ | ~~Sin trazabilidad de cambios en entidades~~ | ✅ `spatie/laravel-activitylog` instalado, usado en 7 modelos |
 | ~~Credenciales hardcodeadas en SaleTest/InventoryTest~~ | ~~Riesgo de seguridad, viola DRY~~ | ~~Corregido en Hito 003 (ADR-008)~~ |
+| Frontend Admin de Purchases faltante | Brecha UX (backend OK) | Hito 005 sprint backlog |
+| Inventory Admin placeholder (stock + kardex) | Brecha UX | Hito 005 sprint backlog |
 
 ## Hoja de ruta (del perfil Senior Fullstack ERP Architect v2)
 
@@ -162,14 +170,14 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 - ✅ 6 migraciones con prefijo (`sales_ventas`, `sales_venta_items`, `sales_notas_credito`, `inventory_stock`, `inventory_movimientos`, `dim_almacen`)
 - ✅ ULID en todas las PKs transaccionales
 - ✅ Models con `HasUlids`, `SoftDeletes`, `LogsActivity`
-- ✅ `SaleService` (crear, actualizar, confirmar, anular con IGV 18%)
-- ✅ `InventoryService` (descontar/reingresar stock con `lockForUpdate`)
+- ✅ `SaleService` (crear, actualizar, confirmar, anular con IGV 18% — fórmula fuente única en `calcularLineaIgv`)
+- ✅ `InventoryService` (descontar/reingresar stock con `lockForUpdate` y `almacen_id`)
 - ✅ `CreditNoteService` (emitir NC)
 - ✅ `SaleConfirmed` event + `DescontarStock` listener
 - ✅ 3 Policies: `SalePolicy`, `CustomerPolicy`, `ProductPolicy`
 - ✅ 8 rutas sales + 3 rutas inventory con `permission:*` middleware
-- ✅ 5 permisos nuevos: `ver-ventas`, `crear-ventas`, `editar-ventas`, `anular-ventas`, `nota-credito`, `ver-stock`, `ajustar-stock`, `kardex`
-- ✅ 2 tests Feature (`SaleTest` 8/8, `InventoryTest` 2/2) con factories + actingAs (ADR-008)
+- ✅ 8 permisos sales + 3 permisos inventory; total 14 con A-08 confirmar-ventas
+- ✅ 4 tests Feature (`SaleTest` 18, `InventoryTest` 4) con factories + actingAs (ADR-008)
 
 **Frontend (parcial)**:
 - ✅ `SaleListPage` Admin con DataGrid + filtros + confirmar/anular
@@ -179,21 +187,40 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 - ✅ Cart store Zustand con persist en localStorage
 - ⏳ `InventoryPage` Admin (solo placeholder, falta stock list + kardex)
 
-**Pendiente Hito 003** (reclasificado al backlog general del proyecto):
-- ❌ Greenter 5.x + envío SOAP a SUNAT
-- ❌ Job asíncrono `SendInvoiceToSunat` con Redis Queue
-- ❌ Inventory Admin completo (stock + kardex)
-- ❌ Evento `Finance` para generar asiento contable
-- ❌ Tests Playwright E2E del flujo completo Admin/Portal
+### Hito 004 — Purchases ✅ Backend implementado · Finance ⏸ Pendiente
 
-### Hito 004 — Purchases + Finance
-- Compras y proveedores
-- Libro contable electrónico (PLE)
-- Cálculo IGV/ISC/detracciones
+**Purchases (Ola B, completo)**:
+- ✅ 3 migraciones con prefijo (`purchases_proveedores`, `purchases_compras` con `purchases_codigo_seq`, `purchases_compra_items`)
+- ✅ ULID en todas las PKs + SoftDeletes
+- ✅ 3 modelos: `Proveedor`, `Compra`, `CompraItem` con `HasUlids`, `SoftDeletes`, `LogsActivity`
+- ✅ 2 services: `ProveedorService` (CRUD), `CompraService` (CRUD, importa `SaleService::calcularLineaIgv`, `aumentarStock` inline)
+- ✅ 2 policies: `ProveedorPolicy`, `CompraPolicy` con `confirmar()` y `anular()`
+- ✅ 2 controllers delgados con `viewAny` en `index`
+- ✅ 4 FormRequests con `exists:dim_*` (sin `deleted_at`) y `exists:purchases_*` (con `deleted_at`)
+- ✅ 3 API Resources con `whenLoaded()`
+- ✅ 12 rutas REST con `permission:*` middleware
+- ✅ `CompraConfirmada` event + `AumentarStock` listener (no-op, lógica inline)
+- ✅ 11 nuevos permisos Purchases; rol `Comprador` ampliado
+- ✅ 2 tests Feature (`CompraTest` 13/13, `ProveedorTest` 6/6) con factories + actingAs (ADR-008)
+- ✅ Fix SUNAT: IGV = `total - gravada` (post-rounding) en `calcularLineaIgv`
+- ✅ `App\Models\Catalog\Almacen.php` (modelo Eloquent para `dim_almacen`)
+
+**Pendiente Purchases (Frontend)**:
+- ❌ `PurchaseListPage` Admin con DataGrid
+- ❌ `PurchaseFormPage` Admin con ítems dinámicos
+- ❌ Portal Proveedor (vista de sus órdenes)
+
+**Finance (Ola C, ⏸ pendiente de validación)**:
+- ⏸ 3 migraciones (`finance_cuentas_contables`, `finance_asientos`, `finance_asiento_lineas`)
+- ⏸ Plan contable básico SUNAT (40 cuentas)
+- ⏸ `FinanceService` con `generarAsientoPorVenta/Compra`, `validarCuadratura`, `exportarPLE 14.1/8.1`
+- ⏸ Tests ~8
 
 ### Hito 005 — Logistics + Loyalty
 - Rutas, zonas, transportistas
 - Programa de canje y premios
+- Frontend Admin Purchases completo
+- Inventory Admin completo (stock + kardex)
 
 ### Hito 006 — Cross-cutting
 - CI/CD (GitHub Actions)
@@ -201,6 +228,7 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 - Laravel Pulse + Sentry
 - Monitoreo (Prometheus + Grafana)
 - Tests E2E (Playwright)
+- Greenter 5.x + SUNAT + Job async
 
 ## Convenciones
 
