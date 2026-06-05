@@ -28,6 +28,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['name' => 'ver-ventas',       'descripcion' => 'Ver ventas realizadas',          'modulo' => 'Sales'],
             ['name' => 'crear-ventas',     'descripcion' => 'Crear nuevas ventas',            'modulo' => 'Sales'],
             ['name' => 'editar-ventas',    'descripcion' => 'Editar ventas existentes',       'modulo' => 'Sales'],
+            ['name' => 'confirmar-ventas', 'descripcion' => 'Confirmar ventas (dispara descuento de stock)', 'modulo' => 'Sales'],
             ['name' => 'anular-ventas',    'descripcion' => 'Anular ventas',                  'modulo' => 'Sales'],
             ['name' => 'eliminar-ventas',  'descripcion' => 'Eliminar ventas definitivamente (físico)', 'modulo' => 'Sales'],
             ['name' => 'nota-credito',     'descripcion' => 'Emitir notas de crédito',        'modulo' => 'Sales'],
@@ -56,9 +57,9 @@ class RoleAndPermissionSeeder extends Seeder
 
         $roleDefs = [
             'Super-Admin'    => Permission::all()->pluck('name')->toArray(),
-            'Admin'          => ['ver-usuarios','crear-usuarios','ver-clientes','crear-clientes','editar-clientes','eliminar-clientes','ver-productos','crear-productos','editar-productos','eliminar-productos','editar-precios','ver-ventas','crear-ventas','editar-ventas','anular-ventas','eliminar-ventas','nota-credito','ver-stock','ajustar-stock','kardex','ver-compras','crear-compras','aprobar-compras','ver-finanzas','enviar-sunat','ver-rutas','ver-dashboard','ver-reportes'],
-            'Gerente'        => ['ver-usuarios','ver-clientes','ver-productos','ver-ventas','ver-stock','kardex','ver-compras','ver-finanzas','ver-dashboard','ver-reportes'],
-            'Vendedor'       => ['ver-clientes','crear-clientes','ver-productos','ver-ventas','crear-ventas','editar-ventas','nota-credito','ver-stock','ver-dashboard'],
+            'Admin'          => ['ver-usuarios','crear-usuarios','ver-clientes','crear-clientes','editar-clientes','eliminar-clientes','ver-productos','crear-productos','editar-productos','eliminar-productos','editar-precios','ver-ventas','crear-ventas','editar-ventas','confirmar-ventas','anular-ventas','eliminar-ventas','nota-credito','ver-stock','ajustar-stock','kardex','ver-compras','crear-compras','aprobar-compras','ver-finanzas','enviar-sunat','ver-rutas','ver-dashboard','ver-reportes'],
+            'Gerente'        => ['ver-usuarios','ver-clientes','ver-productos','ver-ventas','confirmar-ventas','ver-stock','kardex','ver-compras','ver-finanzas','ver-dashboard','ver-reportes'],
+            'Vendedor'       => ['ver-clientes','crear-clientes','ver-productos','ver-ventas','crear-ventas','editar-ventas','confirmar-ventas','nota-credito','ver-stock','ver-dashboard'],
             'Jefe-Almacen'   => ['ver-productos','ver-stock','ajustar-stock','kardex','ver-dashboard'],
             'Almacenero'     => ['ver-productos','ver-stock','ajustar-stock'],
             'Contador'       => ['ver-ventas','ver-compras','ver-finanzas','enviar-sunat','ver-dashboard','ver-reportes'],

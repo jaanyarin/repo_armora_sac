@@ -11,22 +11,53 @@ use Illuminate\Support\Facades\DB;
 
 class InventoryService
 {
-    public function descontarPorVenta(Sale $sale): void
+    public function descontarPorVenta(Sale $sale, ?int $almacenId = null): void
     {
-        $this->aplicarMovimientoVenta($sale, signo: -1, tipo: 'salida', refTipo: 'sale', obsPrefix: 'Venta');
+        $this->aplicarMovimientoVenta($sale, signo: -1, tipo: 'salida', refTipo: 'sale', obsPrefix: 'Venta', almacenId: $almacenId);
     }
 
-    public function reingresarPorVenta(Sale $sale): void
+    public function reingresarPorVenta(Sale $sale, ?int $almacenId = null): void
     {
-        $this->aplicarMovimientoVenta($sale, signo: +1, tipo: 'entrada', refTipo: 'sale_anulacion', obsPrefix: 'Anulación venta');
+        $this->aplicarMovimientoVenta($sale, signo: +1, tipo: 'entrada', refTipo: 'sale_anulacion', obsPrefix: 'Anulación venta', almacenId: $almacenId);
     }
 
-    private function aplicarMovimientoVenta(Sale $sale, int $signo, string $tipo, string $refTipo, string $obsPrefix): void
+    /**
+     * A-02: resolver almacén destino. Si no se pasa, se usa:
+     *  1) El almacén `principal` activo
+     *  2) El primer almacén activo
+     *  3) Crea uno por defecto si la tabla está vacía (idempotente vía firstOrCreate)
+     */
+    private function resolverAlmacenId(?int $explicit): int
     {
-        $callback = function () use ($sale, $signo, $tipo, $refTipo, $obsPrefix) {
+        if ($explicit !== null) {
+            return $explicit;
+        }
+        $principal = DB::table('dim_almacen')->where('principal', true)->where('activo', true)->value('id');
+        if ($principal) {
+            return (int) $principal;
+        }
+        $primero = DB::table('dim_almacen')->where('activo', true)->orderBy('id')->value('id');
+        if ($primero) {
+            return (int) $primero;
+        }
+        return (int) DB::table('dim_almacen')->insertGetId([
+            'codigo' => 'ALM-001',
+            'nombre' => 'Almacén Principal',
+            'principal' => true,
+            'activo' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function aplicarMovimientoVenta(Sale $sale, int $signo, string $tipo, string $refTipo, string $obsPrefix, ?int $almacenId = null): void
+    {
+        $callback = function () use ($sale, $signo, $tipo, $refTipo, $obsPrefix, $almacenId) {
+            $almacenId = $this->resolverAlmacenId($almacenId);
+
             foreach ($sale->items()->with('producto')->get() as $item) {
                 $stock = Stock::where('producto_id', $item->producto_id)
-                    ->whereNull('almacen_id')
+                    ->where('almacen_id', $almacenId)
                     ->lockForUpdate()
                     ->first();
 
@@ -41,7 +72,7 @@ class InventoryService
                 if (!$stock) {
                     $stock = Stock::create([
                         'producto_id' => $item->producto_id,
-                        'almacen_id' => null,
+                        'almacen_id' => $almacenId,
                         'cantidad_disponible' => $saldoNuevo,
                         'ultima_actualizacion' => now(),
                     ]);
@@ -57,7 +88,7 @@ class InventoryService
 
                 InventoryMovement::create([
                     'producto_id' => $item->producto_id,
-                    'almacen_id' => null,
+                    'almacen_id' => $almacenId,
                     'tipo_movimiento' => $tipo,
                     'referencia_tipo' => $refTipo,
                     'referencia_id' => $sale->id,

@@ -7,17 +7,21 @@ use App\Modules\Products\Http\Requests\UpdateProductRequest;
 use App\Modules\Products\Http\Resources\ProductResource;
 use App\Modules\Products\Models\Product;
 use App\Modules\Products\Services\ProductService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 
 class ProductController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private readonly ProductService $productService,
     ) {}
 
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', Product::class);
         $products = $this->productService->paginate(request()->only(['search', 'activo', 'per_page', 'unidad_medida_id', 'producto_clase_id']));
         return response()->json($products);
     }

@@ -27,6 +27,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Product::class, ProductPolicy::class);
         Gate::policy(Sale::class, SalePolicy::class);
 
+        // A-11: Gates resource-less para Inventory (no hay un "modelo Inventory"
+        // único, son acciones sobre Stock/Movement). Definen la policy por capacidad.
+        $invPolicy = new \App\Modules\Inventory\Policies\InventoryPolicy();
+        Gate::define('viewStock', fn ($user) => $invPolicy->viewStock($user));
+        Gate::define('viewKardex', fn ($user) => $invPolicy->viewKardex($user));
+        Gate::define('adjustStock', fn ($user) => $invPolicy->adjust($user));
+
         // Nota: el listener DescontarStock de SaleConfirmed ya NO se registra
         // automáticamente. SaleService::confirmar()/update() invoca directamente
         // InventoryService::descontarPorVenta() DENTRO de la misma transacción

@@ -45,4 +45,16 @@ class SalePolicy
         return $user->can('nota-credito')
             && in_array($sale->estado, ['confirmada', 'pagada', 'parcial'], true);
     }
+
+    /**
+     * A-08: confirmar requiere permiso dedicado 'confirmar-ventas' y la venta
+     * debe estar en borrador. El permiso está separado de 'editar-ventas' para
+     * que un vendedor pueda editar el borrador (cambiar líneas, cliente) sin
+     * poder confirmar (acción que dispara el descuento de stock y compromete
+     * la integridad transaccional).
+     */
+    public function confirmar(User $user, Sale $sale): bool
+    {
+        return $user->can('confirmar-ventas') && $sale->estado === 'borrador';
+    }
 }

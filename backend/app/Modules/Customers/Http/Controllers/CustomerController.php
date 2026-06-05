@@ -7,17 +7,21 @@ use App\Modules\Customers\Http\Requests\UpdateCustomerRequest;
 use App\Modules\Customers\Http\Resources\CustomerResource;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Services\CustomerService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 
 class CustomerController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private readonly CustomerService $customerService,
     ) {}
 
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', Customer::class);
         $customers = $this->customerService->paginate(request()->only(['search', 'activo', 'per_page']));
         return response()->json($customers);
     }

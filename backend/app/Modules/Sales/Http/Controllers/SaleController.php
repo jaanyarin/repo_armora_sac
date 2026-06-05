@@ -24,6 +24,7 @@ class SaleController extends Controller
 
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', Sale::class);
         $sales = $this->saleService->paginate(request()->only([
             'search', 'estado', 'cliente_id', 'fecha_desde', 'fecha_hasta', 'per_page',
         ]));
@@ -50,7 +51,7 @@ class SaleController extends Controller
 
     public function confirmar(Sale $sale): JsonResponse
     {
-        $this->authorize('update', $sale);
+        $this->authorize('confirmar', $sale);
         $confirmed = $this->saleService->confirmar($sale);
         return response()->json(new SaleResource($confirmed));
     }

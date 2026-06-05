@@ -359,7 +359,7 @@ class SaleTest extends TestCase
 
         $this->app->bind(\App\Modules\Inventory\Services\InventoryService::class, function () {
             $mock = new class extends \App\Modules\Inventory\Services\InventoryService {
-                public function descontarPorVenta(\App\Modules\Sales\Models\Sale $sale): void
+                public function descontarPorVenta(\App\Modules\Sales\Models\Sale $sale, ?int $almacenId = null): void
                 {
                     throw new \RuntimeException('Forzando fallo del listener (test A-04)');
                 }
@@ -436,5 +436,43 @@ class SaleTest extends TestCase
             ->putJson("/api/sales/{$sale['id']}", $payload)
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['estado']);
+    }
+
+    /**
+     * A-08: confirmar requiere permiso dedicado `confirmar-ventas`.
+     * Un usuario sin ese permiso (Logistica) → 403; con permiso (Admin) → 200.
+     */
+    public function test_user_without_confirmar_permission_is_forbidden(): void
+    {
+        $sale = $this->asVendedor()
+            ->postJson('/api/sales', $this->validSalePayload())
+            ->json();
+
+        $this->asLogistica()
+            ->postJson("/api/sales/{$sale['id']}/confirmar")
+            ->assertForbidden();
+    }
+
+    public function test_user_with_confirmar_permission_succeeds(): void
+    {
+        $sale = $this->asVendedor()
+            ->postJson('/api/sales', $this->validSalePayload())
+            ->json();
+
+        $this->asAdmin()
+            ->postJson("/api/sales/{$sale['id']}/confirmar")
+            ->assertOk()
+            ->assertJsonPath('estado', 'confirmada');
+    }
+
+    /**
+     * A-11: authorize('viewAny') en index() de SaleController.
+     * Logistica no tiene `ver-ventas` → 403.
+     */
+    public function test_user_without_viewAny_permission_is_forbidden(): void
+    {
+        $this->asLogistica()
+            ->getJson('/api/sales')
+            ->assertForbidden();
     }
 }

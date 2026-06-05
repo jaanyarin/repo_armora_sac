@@ -5,6 +5,7 @@ namespace App\Modules\Inventory\Http\Controllers;
 use App\Modules\Inventory\Models\InventoryMovement;
 use App\Modules\Inventory\Models\Stock;
 use App\Modules\Products\Models\Product;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -12,8 +13,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class InventoryController extends Controller
 {
+    use AuthorizesRequests;
+
     public function stock(Request $request): JsonResponse
     {
+        $this->authorize('viewStock');
         $query = Stock::with(['producto.unidadMedida']);
 
         if ($search = $request->query('search')) {
@@ -28,6 +32,7 @@ class InventoryController extends Controller
 
     public function kardex(Request $request): JsonResponse
     {
+        $this->authorize('viewKardex');
         $query = InventoryMovement::with(['producto.unidadMedida', 'usuario'])
             ->orderBy('fecha_movimiento', 'desc');
 
