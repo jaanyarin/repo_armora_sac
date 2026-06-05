@@ -63,7 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('{sale}', [SaleController::class, 'show'])->middleware('permission:ver-ventas');
         Route::post('/', [SaleController::class, 'store'])->middleware('permission:crear-ventas');
         Route::put('{sale}', [SaleController::class, 'update'])->middleware('permission:editar-ventas');
-        Route::post('{sale}/confirmar', [SaleController::class, 'confirmar'])->middleware('permission:crear-ventas');
+        Route::post('{sale}/confirmar', [SaleController::class, 'confirmar'])->middleware('permission:confirmar-ventas');
         Route::post('{sale}/anular', [SaleController::class, 'anular'])->middleware('permission:anular-ventas');
         Route::delete('{sale}', [SaleController::class, 'destroy'])->middleware('permission:eliminar-ventas');
         Route::post('{sale}/nota-credito', [SaleController::class, 'emitirNotaCredito'])->middleware('permission:nota-credito');
@@ -73,5 +73,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('stock', [InventoryController::class, 'stock'])->middleware('permission:ver-stock');
         Route::get('stock/{productId}', [InventoryController::class, 'stockByProduct'])->middleware('permission:ver-stock');
         Route::get('kardex', [InventoryController::class, 'kardex'])->middleware('permission:kardex');
+    });
+
+    Route::prefix('purchases')->group(function () {
+        Route::prefix('proveedores')->group(function () {
+            Route::get('/', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'index'])->middleware('permission:ver-proveedores');
+            Route::get('{proveedor}', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'show'])->middleware('permission:ver-proveedores');
+            Route::post('/', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'store'])->middleware('permission:crear-proveedores');
+            Route::put('{proveedor}', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'update'])->middleware('permission:editar-proveedores');
+            Route::delete('{proveedor}', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'destroy'])->middleware('permission:eliminar-proveedores');
+        });
+        Route::prefix('compras')->group(function () {
+            Route::get('/', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'index'])->middleware('permission:ver-compras');
+            Route::get('{compra}', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'show'])->middleware('permission:ver-compras');
+            Route::post('/', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'store'])->middleware('permission:crear-compras');
+            Route::put('{compra}', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'update'])->middleware('permission:editar-compras');
+            Route::post('{compra}/confirmar', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'confirmar'])->middleware('permission:confirmar-compras');
+            Route::post('{compra}/anular', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'anular'])->middleware('permission:anular-compras');
+            Route::delete('{compra}', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'destroy'])->middleware('permission:eliminar-compras');
+        });
     });
 });

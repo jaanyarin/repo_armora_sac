@@ -26,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Customer::class, CustomerPolicy::class);
         Gate::policy(Product::class, ProductPolicy::class);
         Gate::policy(Sale::class, SalePolicy::class);
+        Gate::policy(\App\Modules\Purchases\Models\Proveedor::class, \App\Modules\Purchases\Policies\ProveedorPolicy::class);
+        Gate::policy(\App\Modules\Purchases\Models\Compra::class, \App\Modules\Purchases\Policies\CompraPolicy::class);
 
         // A-11: Gates resource-less para Inventory (no hay un "modelo Inventory"
         // único, son acciones sobre Stock/Movement). Definen la policy por capacidad.
