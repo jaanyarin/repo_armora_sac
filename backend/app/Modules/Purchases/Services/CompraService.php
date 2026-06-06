@@ -2,6 +2,7 @@
 
 namespace App\Modules\Purchases\Services;
 
+use App\Modules\Company\Models\EmpresaConfig;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Purchases\Events\CompraConfirmada;
 use App\Modules\Purchases\Models\Compra;
@@ -54,6 +55,12 @@ class CompraService
 
     public function create(array $data): Compra
     {
+        if (EmpresaConfig::value('compras_bloqueadas')) {
+            throw ValidationException::withMessages([
+                'compras' => ['Las compras están bloqueadas. No se puede crear una nueva compra.'],
+            ]);
+        }
+
         $data['usuario_id'] = $data['usuario_id'] ?? Auth::id();
         $data['origen'] = $data['origen'] ?? 'admin';
 

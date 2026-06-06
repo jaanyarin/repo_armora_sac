@@ -1,7 +1,14 @@
 # ADR-009 — Estrategia de remediación intercalada para hallazgos A-01..A-11 durante HITO-004
 
-**Estado:** Aprobado  
-**Fecha:** 2026-06-04  
+> [!IMPORTANT]
+> **ESTADO ARCHIVADO — 2026-06-05:** Este ADR se archiva con Fase 0 ✅ cerrada.
+> Fases 1-4 (Purchases, Finance, cleanup) se trasladan al **ADR-010**.
+> Ver `_auditoria/HITO-003/HITO-003-validacion-ADR-009.md` para validación.
+> **No usar como referencia activa para nuevas implementaciones.**
+
+**Estado:** 🟡 Archivado (Fase 0 completa; Fases 1-4 → ADR-010)  
+**Fecha creación:** 2026-06-04  
+**Fecha archivo:** 2026-06-05  
 **Contexto:** HITO-003 cerrado 🟡 condicional. 3 críticos corregidos, 11 hallazgos 🟠 pendientes.  
 **Decisión:** Opción A — Intercalar 4 fixes upfront (~4h) + 7 fixes durante HITO-004.
 

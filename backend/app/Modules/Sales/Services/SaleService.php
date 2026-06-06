@@ -2,6 +2,7 @@
 
 namespace App\Modules\Sales\Services;
 
+use App\Modules\Company\Models\EmpresaConfig;
 use App\Modules\Sales\Events\SaleConfirmed;
 use App\Modules\Sales\Models\Sale;
 use App\Modules\Sales\Models\SaleItem;
@@ -9,6 +10,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SaleService
 {
@@ -41,6 +43,12 @@ class SaleService
 
     public function create(array $data): Sale
     {
+        if (EmpresaConfig::value('ventas_bloqueadas')) {
+            throw ValidationException::withMessages([
+                'ventas' => ['Las ventas están bloqueadas. No se puede crear una nueva venta.'],
+            ]);
+        }
+
         return DB::transaction(function () use ($data) {
             $data['codigo'] = $data['codigo'] ?? $this->generateCode();
             $data['usuario_id'] = $data['usuario_id'] ?? Auth::id();
@@ -188,7 +196,7 @@ class SaleService
     {
         $totalLinea = round($cantidad * $precioUnitario - $descuentoLinea, 2);
         $gravada    = round($totalLinea / 1.18, 2);
-        $igv        = round($gravada * 0.18, 2);
+        $igv        = round($totalLinea - $gravada, 2);
 
         return [
             'total_linea' => $totalLinea,
