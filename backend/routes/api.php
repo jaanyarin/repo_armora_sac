@@ -40,6 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('sexos', 'sexos');
         Route::get('roles', 'roles');
         Route::get('permisos', 'permisos');
+        Route::get('almacenes', 'almacenes');
+        Route::get('documentos-identidad', 'documentosIdentidad');
     });
 
     Route::prefix('customers')->group(function () {
@@ -92,5 +94,26 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('{compra}/anular', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'anular'])->middleware('permission:anular-compras');
             Route::delete('{compra}', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'destroy'])->middleware('permission:eliminar-compras');
         });
+    });
+
+    Route::prefix('empresa')->group(function () {
+        Route::get('/', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'show'])->middleware('permission:ver-configuracion');
+        Route::put('/', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'update'])->middleware('permission:configurar-empresa');
+        Route::post('imagen/{tipo}', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'uploadImage'])->middleware('permission:configurar-empresa');
+        Route::delete('imagen/{tipo}', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'resetImage'])->middleware('permission:configurar-empresa');
+        Route::post('actualizar-decimales', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'actualizarDecimalesSunat'])->middleware('permission:configurar-empresa');
+    });
+
+    Route::prefix('personal')->group(function () {
+        Route::get('roles-disponibles', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'rolesDisponibles'])->middleware('permission:ver-personal');
+        Route::get('permisos-agrupados', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'permisosAgrupados'])->middleware('permission:ver-personal');
+        Route::get('foto/{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'getPhoto']);
+        Route::get('/', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'index'])->middleware('permission:ver-personal');
+        Route::get('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'show'])->middleware('permission:ver-personal');
+        Route::post('/', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'store'])->middleware('permission:crear-personal');
+        Route::put('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'update'])->middleware('permission:editar-personal');
+        Route::post('{personal}/foto', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'uploadPhoto'])->middleware('permission:editar-personal');
+        Route::delete('{personal}/foto', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'resetPhoto'])->middleware('permission:editar-personal');
+        Route::delete('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'destroy'])->middleware('permission:eliminar-personal');
     });
 });

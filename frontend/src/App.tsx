@@ -9,6 +9,7 @@ import NotFoundPage from './shared/components/NotFoundPage';
 import AdminLayout from './Admin/layouts/AdminLayout';
 import AdminDashboardPage from './Admin/pages/DashboardPage';
 import PortalLayout from './Portal/layouts/PortalLayout';
+import ComingSoonPage from './Admin/components/ComingSoonPage';
 import { useAuthStore } from './shared/hooks/useAuth';
 
 const CustomerListPage = lazy(() => import('./Admin/pages/Customers/CustomerListPage'));
@@ -17,6 +18,12 @@ const ProductListPage = lazy(() => import('./Admin/pages/Products/ProductListPag
 const ProductFormPage = lazy(() => import('./Admin/pages/Products/ProductFormPage'));
 const SaleListPage = lazy(() => import('./Admin/pages/Sales/SaleListPage'));
 const SaleFormPage = lazy(() => import('./Admin/pages/Sales/SaleFormPage'));
+const PurchaseListPage = lazy(() => import('./Admin/pages/Purchases/PurchaseListPage'));
+const PurchaseFormPage = lazy(() => import('./Admin/pages/Purchases/PurchaseFormPage'));
+const SupplierListPage = lazy(() => import('./Admin/pages/Suppliers/SupplierListPage'));
+const SupplierFormPage = lazy(() => import('./Admin/pages/Suppliers/SupplierFormPage'));
+const CompanySettingsPage = lazy(() => import('./Admin/pages/Company/CompanySettingsPage'));
+const PersonalFormPage = lazy(() => import('./Admin/pages/Personal/PersonalFormPage'));
 const PortalLoginPage = lazy(() => import('./Portal/pages/PortalLoginPage'));
 const PortalDashboardPage = lazy(() => import('./Portal/pages/PortalDashboardPage'));
 const ProductCatalogPage = lazy(() => import('./Portal/pages/ProductCatalogPage'));
@@ -58,7 +65,14 @@ function AppWithAuth() {
           <Route path="ventas/:id" element={<SuspenseWrapper><SaleListPage /></SuspenseWrapper>} />
           <Route path="inventario" element={<SuspenseWrapper><Typography sx={{ p: 4 }}>Módulo de Inventario — Próximamente</Typography></SuspenseWrapper>} />
           <Route path="logistica" element={<SuspenseWrapper><Typography sx={{ p: 4 }}>Módulo de Logística — Próximamente</Typography></SuspenseWrapper>} />
-          <Route path="configuracion" element={<SuspenseWrapper><Typography sx={{ p: 4 }}>Configuración — Próximamente</Typography></SuspenseWrapper>} />
+          <Route path="configuracion" element={<SuspenseWrapper><CompanySettingsPage /></SuspenseWrapper>} />
+          <Route path="personal/nuevo" element={<SuspenseWrapper><PersonalFormPage /></SuspenseWrapper>} />
+          <Route path="personal/:id/editar" element={<SuspenseWrapper><PersonalFormPage /></SuspenseWrapper>} />
+          <Route path="compras" element={<SuspenseWrapper><PurchaseListPage /></SuspenseWrapper>} />
+          <Route path="compras/nueva" element={<SuspenseWrapper><PurchaseFormPage /></SuspenseWrapper>} />
+          <Route path="proveedores" element={<SuspenseWrapper><SupplierListPage /></SuspenseWrapper>} />
+          <Route path="proveedores/nuevo" element={<SuspenseWrapper><SupplierFormPage /></SuspenseWrapper>} />
+          <Route path="*" element={<SuspenseWrapper><ComingSoonPage /></SuspenseWrapper>} />
         </Route>
       </Route>
       <Route path="/portal" element={<PortalLayout />}>

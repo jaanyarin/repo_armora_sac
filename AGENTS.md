@@ -18,16 +18,16 @@
 
 ## Estado actual del proyecto
 
-**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) en validación** — Sales + Inventory + **Purchases** completo (backend) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B (HITO-004 Purchases: Proveedor + Compra con IGV fuente única).
-Módulos funcionales: Auth, Catalog, Customers, Products, **Sales, Inventory, Purchases**.
+**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) en validación + Hito 004a Company Settings implementado + Hito 007 Personal cerrado + iteración feedback Hito 007 aplicada** — Sales + Inventory + **Purchases** completo (backend) + **Company** (backend + frontend) + **Personal** (backend + frontend "Crear" + iteración ficha) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B + 4 fixes Personal + 3 migraciones + 6 cambios de feedback.
+Módulos funcionales: Auth, Catalog, Customers, Products, **Sales, Inventory, Purchases, Company, Personal**.
 Portal Cliente: catálogo público + login + dashboard + **pedidos (carrito + checkout + historial)** con navegación responsive.
 
-**Próximo:** Hito 004 Finance (Ola C) ⏸ diferido para validación previa del auditor sobre Ola A+B.
+**Próximo:** Hito 004 Finance (Ola C) ⏸ diferido + Hito 005 Logistics (Mapa de Rutas) ⏸.
 
 ### Arquitectura backend
 
 ```
-app/Modules/{Auth,Catalog,Customers,Products,Sales,Inventory,Purchases}/
+app/Modules/{Auth,Catalog,Customers,Products,Sales,Inventory,Purchases,Company}/
 ├── Http/
 │   ├── Controllers/     ← Delgados, delegan en Services
 │   ├── Requests/        ← FormRequests con validación + mensajes español
@@ -57,6 +57,19 @@ Principios aplicados (alineados con perfil arquitecto):
 - **ULID** en PKs transaccionales: `sales_*`, `inventory_movimientos` (Hito 003) ✅
 - **Prefijos de tabla** por dominio: `sales_`, `inventory_` (Hito 003) ✅
 - **spatie/laravel-activitylog**: instalado, 3 migraciones ejecutadas (Hito 003) ✅
+- **Storage imágenes empresa**: `Storage::disk('public')` → `storage/app/public/empresa/` (Hito 004a) ✅
+- **Bloqueo ventas/compras**: flag cross-module en EmpresaConfig + checks en SaleService/CompraService (Hito 004a) ✅
+- **Extender `users` con columnas nullable** para Personal (Hito 007) ✅
+- **`Storage::disk('public')` para fotos de personal** en `storage/app/public/personal/{userId}/` (Hito 007) ✅
+- **`$guard_name = 'web'` en modelo User** para que `syncRoles` use el guard correcto (fix Hito 007 reabre fix Hito 003) ✅
+- **Date casts** para `password_changed_at` y `fecha_nacimiento` (fix Hito 007) ✅
+- **useForm/useQuery tipados con genéricos** en `env.d.ts` (mejora Hito 007 que también arregla 2 errores pre-existentes) ✅
+- **CRUD Personal completo backend** + frontend "Crear Personal" wizard 6 pasos (Hito 007) ✅
+- **Iteración feedback Personal**: step 1 sin `nombre_completo` (computado) + eye toggle passwords; step 2 con `Autocomplete` `dim_documento_identidad` (DNI/CE/Pasaporte/RUC) + único `numero_documento`; step 3 roles **single-select** (radio list); `dim_almacen` sembrado con "Almacén Principal" ✅
+- **`dim_documento_identidad`** nueva tabla catálogo (reemplaza uso incorrecto de `dim_documento_tipo` comprobantes para identidad) con `codigo`, `nombre`, `longitud`, `regex` PCRE-delimitado (DNI 8d / CE alphanumeric 12c / PAS 20c / RUC 11d) ✅
+- **Regex dinámica + maxLength** en `numero_documento` según `documento_identidad_id` seleccionado (helper `resolveRegex/resolveMaxLength` en FormRequests) ✅
+- **`roles.max:1`** validación server-side que rechaza 2+ roles en payload + UI single-select con radio buttons (Hito 007 iter) ✅
+- **`seed_default_almacen`** con `insertOrIgnore` idempotente (soporta `RefreshDatabase` en tests + no rompe InventoryTest) ✅
 
 Principios PENDIENTES (hoja de ruta del perfil arquitecto):
 - Repository Pattern (opcional, para consultas complejas) ❌
@@ -70,7 +83,7 @@ Principios PENDIENTES (hoja de ruta del perfil arquitecto):
 ```
 frontend/src/
 ├── shared/              ← Código compartido Admin + Portal
-│   ├── api/             ← Axios client + interceptors + endpoints (authApi, catalogApi, customersApi, productsApi, salesApi, inventoryApi)
+│   ├── api/             ← Axios client + interceptors + endpoints (authApi, catalogApi, customersApi, productsApi, salesApi, inventoryApi, empresaApi)
 │   ├── hooks/           ← useAuth (Zustand), useCart (Zustand persist) — Hito 003
 │   ├── types/           ← 233 → 320+ líneas, interfaces snake_case
 │   ├── components/      ← ProtectedRoute, LoginPage, NotFoundPage
@@ -78,7 +91,7 @@ frontend/src/
 ├── Admin/               ← SPA Admin ERP (desktop-primary)
 │   ├── layouts/         ← AdminLayout (Drawer + AppBar)
 │   ├── pages/           ← Dashboard + Customers + Products + Sales (lista + formulario) — Hito 003
-│   └── components/      ← (vacíos por ahora)
+│   └── components/      ← Sidebar (acordeón: 1 sección abierta a la vez + auto-open por ruta activa + búsqueda con filtro en vivo)
 └── Portal/              ← SPA Portal Cliente (mobile-first)
     ├── layouts/         ← PortalLayout (AppBar + BottomNav + Footer)
     ├── pages/           ← ProductCatalog + PortalDashboard + PortalLogin + OrderCreate + OrderHistory — Hito 003
@@ -106,7 +119,7 @@ Brechas vs perfil arquitecto:
 | `npm run dev` | Servidor Vite en puerto **5175** |
 | `npm run build` | `tsc -b && vite build` |
 | `npm run lint` | ESLint |
-| `npm run test` | Vitest (6 tests: useAuth + ProtectedRoute) |
+| `npm run test` | Vitest (9 tests: useAuth + ProtectedRoute + Sidebar) |
 | `npm run test:watch` | Vitest en modo watch |
 | `npm run test:e2e` | Playwright E2E (8 tests: portal + auth + navegación) |
 
@@ -161,6 +174,9 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 | ~~Credenciales hardcodeadas en SaleTest/InventoryTest~~ | ~~Riesgo de seguridad, viola DRY~~ | ~~Corregido en Hito 003 (ADR-008)~~ |
 | Frontend Admin de Purchases faltante | Brecha UX (backend OK) | Hito 005 sprint backlog |
 | Inventory Admin placeholder (stock + kardex) | Brecha UX | Hito 005 sprint backlog |
+| Module Company sin ULID/SoftDeletes (tabla singleton) | Inconsistencia arquitectónica vs módulos transaccionales | Aceptado por diseño (singleton no requiere trazabilidad por fila) |
+| Bloqueo ventas/compras sin middleware de validación request-time | Dependencia de lógica en Services (SaleService/CompraService chequean EmpresaConfig manualmente) | OK si no escala; migrar a middleware si hay >3 módulos bloqueables |
+| Imágenes empresa: primer uso de Storage::disk('public') | Requiere `php artisan storage:link` manual | Docs en setup;
 
 ## Hoja de ruta (del perfil Senior Fullstack ERP Architect v2)
 
@@ -216,11 +232,68 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 - ⏸ `FinanceService` con `generarAsientoPorVenta/Compra`, `validarCuadratura`, `exportarPLE 14.1/8.1`
 - ⏸ Tests ~8
 
+### Hito 004a — Company Settings ✅ Backend + Frontend implementado
+
+**Company (Configuración de Empresa)**:
+- ✅ 1 migración (`config_empresa`, tabla singleton sin ULID/SoftDeletes por diseño)
+- ✅ Modelo `EmpresaConfig` con casts boolean/date
+- ✅ Service `EmpresaService` con CRUD + subida/reset imágenes (`Storage::disk('public')`)
+- ✅ Controller thin con upload de imágenes vía multipart
+- ✅ `UpdateEmpresaRequest` con validación y mensajes en español
+- ✅ `EmpresaResource` con URLs de imágenes via `url("storage/...")`
+- ✅ `EmpresaPolicy` + 2 permisos: `ver-configuracion`, `configurar-empresa`
+- ✅ 5 rutas REST (`GET`, `PUT`, `POST imagen/{tipo}`, `DELETE imagen/{tipo}`, `POST actualizar-decimales`)
+- ✅ CompanySettingsPage Admin con 4 tabs (Empresa, Parámetros, Imágenes, Bloqueo)
+- ✅ Catálogos anidados (país→departamento→provincia→distrito) vía catalogApi + Autocomplete MUI con búsqueda en vivo
+- ✅ Validación contextual por sección: `__seccion=empresa` activa `required` en RZ, RUC, Email, Celular, Departamento, Provincia, Distrito, Dirección; resto de tabs sigue `nullable` para PATCH parcial
+- ✅ Bloqueo ventas/compras: flag en BD + check en SaleService::create() y CompraService::create()
+- ✅ `POST actualizar-decimales` recalcula ROUND() en products y stock
+- ✅ CompanyTest con 9 casos (GET, PUT, decimales, flags, policy, validación sección empresa, regex RUC, PATCH parcial parámetros)
+- ⏳ `php artisan storage:link` requerido para imágenes
+
+### Hito 007 — Personal ✅ Backend + Frontend "Crear" implementados
+
+**Personal (Gestión de Usuarios Internos)**:
+- ✅ 4 migraciones (1 extiende `users` con 19 columnas nullable + 7 FK + softDeletes + índices + 3 pivotes: `personal_listas_precios`, `personal_almacenes`, `personal_permisos`)
+- ✅ 2 modelos catálogo nuevos: `Sexo`, `EstadoCivil` (extiende `dim_sexo`/`dim_estado_civil` con `$timestamps=false`)
+- ✅ Modelo `Personal extends User` con `SoftDeletes` + `LogsActivity` + 10 relaciones
+- ✅ `PersonalService` con 9 métodos (paginate, findById, create, update, delete, uploadPhoto, resetPhoto, getPhotoPath, getRolesDisponibles, getPermisosAgrupados) + helper privado `generateCode` (PER-XXXXX)
+- ✅ `PersonalPolicy` con `delete()` que impide auto-eliminarse
+- ✅ 2 FormRequests con regex DNI/RUC, `confirmed` password, `withValidator` que rechaza DNI+RUC simultáneos
+- ✅ `PersonalResource` con `whenLoaded` para todas las relaciones + `foto_url`
+- ✅ `PersonalController` con 10 endpoints REST
+- ✅ 4 nuevos permisos Spatie (ver/crear/editar/eliminar-personal); Admin y Super-Admin actualizados
+- ✅ 10 rutas REST con middleware `auth:sanctum + permission:*`
+- ✅ 1 endpoint catálogo nuevo: `GET /api/catalog/almacenes`
+- ✅ PersonalTest con **22/22 casos passing** (CRUD, validaciones, upload foto, reset foto, RBAC, no auto-delete)
+- ✅ Fix 4 issues críticos: `data` wrap en Resources, `$fillable` incompleto, date casts faltantes, env.d.ts type augmentation
+
+**Frontend (parcial)**:
+- ✅ `personalApi` en `endpoints.ts` con 8 métodos
+- ✅ 5 tipos nuevos en `shared/types/index.ts` (Personal, PersonalPayload, Sexo, EstadoCivil, PermisoAgrupado)
+- ✅ `PersonalFormPage.tsx` con MUI Stepper de 6 pasos + RHF + Zod (Datos Personales → Identidad → Contacto y Ubicación → Permisos y Accesos → Fotografía → Confirmación)
+- ✅ 2 rutas en `App.tsx` (nuevo, editar)
+- ✅ `deriveTitle` actualizado en `AdminLayout`
+
+**Iteración feedback (post-revisión de ficha)**:
+- ✅ Step 1 sin campo `nombre_completo` (se computa server-side como `apellido_paterno apellido_materno nombres`); `password`/`password_confirmation` con `IconButton` `Visibility`/`VisibilityOff` para mostrar/ocultar
+- ✅ Step 2: `documento_identidad_id` ahora es `Autocomplete` contra `dim_documento_identidad` (DNI/CE/Pasaporte/RUC); campo único `numero_documento` con regex y `maxLength` dinámicas (helper `resolveRegex/resolveMaxLength` en FormRequests); `dni`/`ruc` eliminados
+- ✅ Step 2: `estado_civil_id` ahora es `Autocomplete` contra `dim_estado_civil` (catálogo SUNAT)
+- ✅ Step 3: roles **single-select** con radio buttons (`RadioButtonChecked`/`RadioButtonUnchecked`) + validación `roles.max:1` server-side (test #23 `test_create_personal_allows_only_one_role`)
+- ✅ Nueva tabla `dim_documento_identidad` (migración `2026_06_07_010000`): DNI/Carné de Extranjería/Pasaporte/RUC con regex PCRE-delimitado (`/^\d{8}$/`, etc.)
+- ✅ Seed `dim_almacen` con "Almacén Principal" (migración `2026_06_07_010001` con `insertOrIgnore` idempotente)
+- ✅ Migración `2026_06_07_010002` elimina `dni`/`ruc`/`documento_tipo_id` de `users` y agrega `documento_identidad_id` FK a `dim_documento_identidad`
+- ✅ `User::factory()` y `AuthService::login` actualizados (login multi-campo usa `numero_documento` en vez de `dni`/`ruc`)
+- ✅ PersonalTest pasa **23/23** (75 assertions); suite completa no pre-existente: 67/67 passing (Personal 23 + Inventory 4 + Sales 18 + Purchases 19 + Company 3)
+- ⏳ `PersonalListPage` (DataGrid) pendiente
+- ⏳ `Gestión Personal` y `Reportes Personal` del sidebar como ComingSoon
+
 ### Hito 005 — Logistics + Loyalty
 - Rutas, zonas, transportistas
 - Programa de canje y premios
 - Frontend Admin Purchases completo
 - Inventory Admin completo (stock + kardex)
+- PersonalListPage (DataGrid) + Gestión Personal completa
 
 ### Hito 006 — Cross-cutting
 - CI/CD (GitHub Actions)

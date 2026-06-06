@@ -12,10 +12,10 @@ export const catalogApi = {
   unidadesMedida: () => apiClient.get('/catalog/unidades-medida'),
   paises: () => apiClient.get('/catalog/paises'),
   departamentos: () => apiClient.get('/catalog/departamentos'),
-  provincias: (departamentoId?: number) =>
-    apiClient.get(`/catalog/provincias${departamentoId ? `/${departamentoId}` : ''}`),
-  ubigeos: (provinciaId?: number) =>
-    apiClient.get(`/catalog/ubigeos${provinciaId ? `/${provinciaId}` : ''}`),
+  provincias: (departamentoId?: number, config?: { signal?: AbortSignal }) =>
+    apiClient.get(`/catalog/provincias${departamentoId ? `/${departamentoId}` : ''}`, config),
+  ubigeos: (provinciaId?: number, config?: { signal?: AbortSignal }) =>
+    apiClient.get(`/catalog/ubigeos${provinciaId ? `/${provinciaId}` : ''}`, config),
   documentos: () => apiClient.get('/catalog/documentos'),
   documentoTipos: () => apiClient.get('/catalog/documento-tipos'),
   roles: () => apiClient.get('/catalog/roles'),
@@ -36,6 +36,8 @@ export const catalogApi = {
   listaPrecios: () => apiClient.get('/catalog/lista-precios'),
   estadosCivil: () => apiClient.get('/catalog/estados-civil'),
   sexos: () => apiClient.get('/catalog/sexos'),
+  almacenes: () => apiClient.get('/catalog/almacenes'),
+  documentosIdentidad: () => apiClient.get('/catalog/documentos-identidad'),
 };
 
 export const customersApi = {
@@ -74,6 +76,20 @@ export const salesApi = {
     apiClient.post(`/sales/${id}/nota-credito`, data),
 };
 
+export const empresaApi = {
+  get: () => apiClient.get('/empresa'),
+  update: (data: Record<string, unknown>) => apiClient.put('/empresa', data),
+  uploadImage: (tipo: string, file: File) => {
+    const formData = new FormData();
+    formData.append('imagen', file);
+    return apiClient.post(`/empresa/imagen/${tipo}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  resetImage: (tipo: string) => apiClient.delete(`/empresa/imagen/${tipo}`),
+  actualizarDecimales: () => apiClient.post('/empresa/actualizar-decimales'),
+};
+
 export const inventoryApi = {
   stock: (params?: Record<string, string | number | boolean>) =>
     apiClient.get('/inventory/stock', { params }),
@@ -81,4 +97,25 @@ export const inventoryApi = {
     apiClient.get(`/inventory/stock/${productId}`),
   kardex: (params?: Record<string, string | number | boolean>) =>
     apiClient.get('/inventory/kardex', { params }),
+};
+
+export const personalApi = {
+  list: (params?: Record<string, string | number | boolean>) =>
+    apiClient.get('/personal', { params }),
+  find: (id: number) => apiClient.get(`/personal/${id}`),
+  create: (data: Record<string, unknown>) =>
+    apiClient.post('/personal', data),
+  update: (id: number, data: Record<string, unknown>) =>
+    apiClient.put(`/personal/${id}`, data),
+  delete: (id: number) => apiClient.delete(`/personal/${id}`),
+  uploadPhoto: (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append('foto', file);
+    return apiClient.post(`/personal/${id}/foto`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  resetPhoto: (id: number) => apiClient.delete(`/personal/${id}/foto`),
+  rolesDisponibles: () => apiClient.get('/personal/roles-disponibles'),
+  permisosAgrupados: () => apiClient.get('/personal/permisos-agrupados'),
 };

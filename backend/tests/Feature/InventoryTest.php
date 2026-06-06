@@ -75,14 +75,15 @@ class InventoryTest extends TestCase
         $this->actingAs($vendedor, 'sanctum');
 
         // Sembrar almacén principal (idempotente)
-        $almacenId = DB::table('dim_almacen')->insertGetId([
-            'codigo' => 'ALM-001',
-            'nombre' => 'Almacén Principal',
-            'principal' => true,
-            'activo' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $almacenId = DB::table('dim_almacen')->where('codigo', 'ALM-001')->value('id')
+            ?? DB::table('dim_almacen')->insertGetId([
+                'codigo' => 'ALM-001',
+                'nombre' => 'Almacén Principal',
+                'principal' => true,
+                'activo' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
         // Crear cliente y producto mínimo
         $clienteId = Customer::create([

@@ -1,116 +1,117 @@
-import { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Box, Drawer, AppBar, Toolbar, Typography, IconButton,
-  List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Avatar, Menu, MenuItem, Divider,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import PeopleIcon from '@mui/icons-material/People';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LogoutIcon from '@mui/icons-material/Logout';
-import { useAuthStore } from '../../shared/hooks/useAuth';
+import { useState, useMemo } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { Box, Drawer } from '@mui/material';
+import Topbar from '../components/Topbar';
+import Sidebar from '../components/Sidebar';
+import { sidebarMenu } from '../data/sidebarMenu';
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 280;
 
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin/dashboard' },
-  { text: 'Clientes', icon: <PeopleIcon />, path: '/admin/clientes' },
-  { text: 'Productos', icon: <InventoryIcon />, path: '/admin/productos' },
-  { text: 'Ventas', icon: <ShoppingCartIcon />, path: '/admin/ventas' },
-  { text: 'Inventario', icon: <AccountBalanceIcon />, path: '/admin/inventario' },
-  { text: 'Logística', icon: <LocalShippingIcon />, path: '/admin/logistica' },
-  { text: 'Configuración', icon: <SettingsIcon />, path: '/admin/configuracion' },
-];
+function findMenuItem(pathname: string): { label: string; path: string } | null {
+  for (const section of sidebarMenu) {
+    for (const item of section.items) {
+      if (pathname === item.path || pathname.startsWith(item.path + '/')) {
+        return item;
+      }
+    }
+  }
+  return null;
+}
+
+function deriveTitle(pathname: string): string {
+  const matched = findMenuItem(pathname);
+  if (matched) return matched.label;
+
+  if (pathname === '/admin/dashboard') return 'Dashboard';
+  if (pathname.startsWith('/admin/clientes')) {
+    if (pathname.includes('/nuevo')) return 'Nuevo Cliente';
+    if (pathname.includes('/editar')) return 'Editar Cliente';
+    return 'Clientes';
+  }
+  if (pathname.startsWith('/admin/productos')) {
+    if (pathname.includes('/nuevo')) return 'Nuevo Producto';
+    if (pathname.includes('/editar')) return 'Editar Producto';
+    return 'Productos';
+  }
+  if (pathname.startsWith('/admin/ventas')) {
+    if (pathname.includes('/nueva')) return 'Nueva Venta';
+    if (pathname.includes('/editar')) return 'Editar Venta';
+    return 'Ventas';
+  }
+  if (pathname.startsWith('/admin/compras')) {
+    if (pathname.includes('/nueva')) return 'Nueva Compra';
+    return 'Compras';
+  }
+  if (pathname.startsWith('/admin/proveedores')) {
+    if (pathname.includes('/nuevo')) return 'Nuevo Proveedor';
+    return 'Proveedores';
+  }
+  if (pathname.startsWith('/admin/personal')) {
+    if (pathname.includes('/nuevo')) return 'Nuevo Personal';
+    if (pathname.includes('/editar')) return 'Editar Personal';
+    return 'Personal';
+  }
+  return 'ARMORA';
+}
 
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuthStore();
 
-  const drawer = (
-    <Box>
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="h6" color="primary" fontWeight={700}>
-          ARMORA
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Admin ERP
-        </Typography>
-      </Box>
-      <Divider />
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname.startsWith(item.path)}
-              onClick={() => { navigate(item.path); setMobileOpen(false); }}
-              sx={{ mx: 1, borderRadius: 2, mb: 0.5 }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 14 }} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </Box>
-  );
+  const title = useMemo(() => deriveTitle(location.pathname), [location.pathname]);
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" sx={{ width: { md: `calc(100% - ${DRAWER_WIDTH}px)` }, ml: { md: `${DRAWER_WIDTH}px` } }} elevation={1}>
-        <Toolbar>
-          <IconButton edge="start" color="inherit" sx={{ mr: 2, display: { md: 'none' } }} onClick={() => setMobileOpen(!mobileOpen)}>
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
-            {menuItems.find((m) => location.pathname.startsWith(m.path))?.text || 'ARMORA'}
-          </Typography>
-          <Avatar
-            sx={{ bgcolor: 'secondary.main', cursor: 'pointer', width: 36, height: 36, fontSize: 14 }}
-            onClick={(e) => setAnchorEl(e.currentTarget)}
-          >
-            {user?.nombre_completo?.charAt(0) || 'U'}
-          </Avatar>
-          <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={() => setAnchorEl(null)}>
-            <MenuItem disabled>
-              <Typography variant="body2">{user?.nombre_completo}</Typography>
-            </MenuItem>
-            <Divider />
-            <MenuItem onClick={logout}>
-              <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
-              Cerrar Sesión
-            </MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f4f6f8' }}>
+      <Topbar
+        title={title}
+        path={location.pathname}
+        onToggleSidebar={() => setMobileOpen(!mobileOpen)}
+      />
 
-      <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
+      <Box
+        component="nav"
+        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 }, position: 'relative', zIndex: 1200 }}
+      >
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
-          sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': { width: DRAWER_WIDTH },
+          }}
         >
-          {drawer}
+          <Sidebar onClose={() => setMobileOpen(false)} />
         </Drawer>
+
         <Drawer
           variant="permanent"
-          sx={{ display: { xs: 'none', md: 'block' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH, borderRight: '1px solid #e0e0e0' } }}
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              borderRight: 'none',
+              bgcolor: '#1f2937',
+            },
+          }}
           open
         >
-          {drawer}
+          <Sidebar onClose={() => {}} />
         </Drawer>
       </Box>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8, bgcolor: 'background.default', minHeight: '100vh' }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          mt: '62px',
+          ml: 0,
+          p: 3,
+          minHeight: 'calc(100vh - 62px)',
+          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+        }}
+      >
         <Outlet />
       </Box>
     </Box>

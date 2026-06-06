@@ -14,8 +14,7 @@ class AuthService
             ->where(function ($q) use ($login) {
                 $q->where('username', $login)
                   ->orWhere('email', $login)
-                  ->orWhere('dni', $login)
-                  ->orWhere('ruc', $login);
+                  ->orWhere('numero_documento', $login);
             })
             ->first();
 

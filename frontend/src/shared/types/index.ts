@@ -357,3 +357,142 @@ export interface CartItem {
   cantidad: number;
   precio_unitario: number;
 }
+
+export interface EmpresaConfig {
+  id: number;
+  razon_social: string | null;
+  nombre_comercial: string | null;
+  ruc: string | null;
+  email: string | null;
+  pais_id: number | null;
+  telefono_fijo: string | null;
+  telefono_celular: string | null;
+  departamento_id: number | null;
+  provincia_id: number | null;
+  ubigeo_id: number | null;
+  direccion: string | null;
+  referencia: string | null;
+  porcentaje_igv: number | null;
+  boleta_monto_dni: number | null;
+  envio_auto_sunat: boolean;
+  consolidado_requerimientos: boolean;
+  consolidado_liquidaciones: boolean;
+  resumen_liquidacion: boolean;
+  preventa_nota_pedido: boolean;
+  periodo_fecha_inicio: string | null;
+  periodo_fecha_fin: string | null;
+  comision_defecto: number | null;
+  hora_cierre: string | null;
+  comision_neto: boolean;
+  preview_fecha_inicio: string | null;
+  preview_fecha_fin: string | null;
+  preview: boolean;
+  imagen_login: string | null;
+  imagen_home: string | null;
+  imagen_reporte: string | null;
+  imagen_firma: string | null;
+  ventas_bloqueadas: boolean;
+  compras_bloqueadas: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface Personal {
+  id: number;
+  codigo: string;
+  username: string;
+  name: string;
+  nombre_completo: string;
+  apellido_paterno: string | null;
+  apellido_materno: string | null;
+  nombres: string | null;
+  email: string | null;
+  documento_identidad_id: number | null;
+  documento_identidad: { id: number; codigo: string; nombre: string; longitud: string | null; regex: string | null } | null;
+  numero_documento: string | null;
+  sexo_id: number | null;
+  sexo: Sexo | null;
+  estado_civil_id: number | null;
+  estado_civil: EstadoCivil | null;
+  fecha_nacimiento: string | null;
+  pais_id: number | null;
+  pais: { id: number; nombre: string } | null;
+  telefono: string | null;
+  telefono_fijo: string | null;
+  telefono_celular: string | null;
+  departamento_id: number | null;
+  provincia_id: number | null;
+  ubigeo_id: number | null;
+  direccion: string | null;
+  referencia: string | null;
+  foto_path: string | null;
+  foto_url: string | null;
+  activo: boolean;
+  ultimo_acceso: string | null;
+  password_changed_at: string | null;
+  roles: string[];
+  permisos_directos: string[];
+  listas_precios: { id: number; nombre: string }[];
+  almacenes: { id: number; nombre: string }[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonalPayload {
+  codigo?: string;
+  username: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  nombres: string;
+  email?: string | null;
+  documento_identidad_id?: number | null;
+  numero_documento?: string | null;
+  sexo_id?: number | null;
+  estado_civil_id?: number | null;
+  fecha_nacimiento?: string | null;
+  pais_id?: number | null;
+  telefono?: string | null;
+  telefono_fijo?: string | null;
+  telefono_celular?: string | null;
+  departamento_id?: number | null;
+  provincia_id?: number | null;
+  ubigeo_id?: number | null;
+  direccion?: string | null;
+  referencia?: string | null;
+  password?: string;
+  password_confirmation?: string;
+  activo?: boolean;
+  roles?: string[];
+  permisos?: number[];
+  listas_precios?: number[];
+  almacenes?: number[];
+}
+
+export interface DocumentoIdentidad {
+  id: number;
+  codigo: string;
+  nombre: string;
+  longitud: string | null;
+  regex: string | null;
+  pais_codigo: string | null;
+  activo: boolean;
+}
+
+export interface Sexo {
+  id: number;
+  codigo: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface EstadoCivil {
+  id: number;
+  codigo: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface PermisoAgrupado {
+  modulo: string;
+  permisos: { id: number; name: string; descripcion: string }[];
+}

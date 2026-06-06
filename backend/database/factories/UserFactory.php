@@ -22,8 +22,6 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'nombre_completo' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'dni' => fake()->unique()->numerify('########'),
-            'ruc' => null,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'telefono' => fake()->phoneNumber(),
@@ -47,7 +45,8 @@ class UserFactory extends Factory
             'name' => 'Admin',
             'nombre_completo' => 'Administrador del Sistema',
             'email' => 'admin@armorasac.com',
-            'dni' => '12345678',
+            'documento_identidad_id' => 1,
+            'numero_documento' => '12345678',
             'password' => Hash::make('admin123'),
         ]);
     }
@@ -60,7 +59,8 @@ class UserFactory extends Factory
             'name' => 'Vendedor',
             'nombre_completo' => 'Vendedor Demo',
             'email' => 'vendedor@armorasac.com',
-            'dni' => '87654321',
+            'documento_identidad_id' => 1,
+            'numero_documento' => '87654321',
             'password' => Hash::make('vendedor123'),
         ]);
     }

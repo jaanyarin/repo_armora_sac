@@ -159,4 +159,17 @@ class CatalogController extends Controller
     {
         return response()->json(DB::table('permissions')->orderBy('name')->get());
     }
+
+    public function almacenes()
+    {
+        return response()->json(DB::table('dim_almacen')->orderBy('nombre')->get());
+    }
+
+    public function documentosIdentidad()
+    {
+        return response()->json(DB::table('dim_documento_identidad')
+            ->where('activo', true)
+            ->orderBy('id')
+            ->get());
+    }
 }
