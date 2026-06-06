@@ -116,6 +116,9 @@ export const personalApi = {
     });
   },
   resetPhoto: (id: number) => apiClient.delete(`/personal/${id}/foto`),
+  toggleActivo: (id: number) => apiClient.post(`/personal/${id}/toggle-activo`),
+  resetPassword: (id: number, password: string, passwordConfirmation: string) =>
+    apiClient.post(`/personal/${id}/reset-password`, { password, password_confirmation: passwordConfirmation }),
   rolesDisponibles: () => apiClient.get('/personal/roles-disponibles'),
   permisosAgrupados: () => apiClient.get('/personal/permisos-agrupados'),
 };

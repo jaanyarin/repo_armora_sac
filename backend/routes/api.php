@@ -114,6 +114,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'update'])->middleware('permission:editar-personal');
         Route::post('{personal}/foto', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'uploadPhoto'])->middleware('permission:editar-personal');
         Route::delete('{personal}/foto', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'resetPhoto'])->middleware('permission:editar-personal');
+        Route::post('{personal}/toggle-activo', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'toggleActivo'])->middleware('permission:editar-personal');
+        Route::post('{personal}/reset-password', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'resetPassword'])->middleware('permission:editar-personal');
         Route::delete('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'destroy'])->middleware('permission:eliminar-personal');
     });
 });

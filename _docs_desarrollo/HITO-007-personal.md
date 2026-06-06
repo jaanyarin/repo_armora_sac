@@ -477,15 +477,57 @@ cd frontend && npm run dev                      # en otra terminal (puerto 5175)
 - `tests/Feature/PersonalTest.php` (nuevo, 23 tests post-iteración)
 - `tests/Feature/InventoryTest.php` (idempotente: usa `where(...)->value(...) ?? insertGetId` para ALM-001)
 
-**Frontend (6 archivos):**
+**Frontend (7 archivos, + PersonalListPage):**
 - `src/shared/types/index.ts` (+6 interfaces: Personal, PersonalPayload, Sexo, EstadoCivil, PermisoAgrupado, **DocumentoIdentidad**)
 - `src/shared/api/endpoints.ts` (+ `personalApi`, + `catalogApi.almacenes`, **+ `catalogApi.documentosIdentidad`**)
 - `src/Admin/pages/Personal/PersonalFormPage.tsx` (reescrito, ~620 líneas: step 1 sin nombre_completo + eye toggle; step 2 Autocomplete; step 3 roles single-select)
-- `src/App.tsx` (lazy import + 2 rutas)
+- `src/Admin/pages/Personal/PersonalListPage.tsx` (**nuevo**, ~280 líneas: DataGrid server-side con búsqueda, filtros, paginación, acciones: editar/reset password/habilitar/eliminar)
+- `src/App.tsx` (lazy import + 3 rutas: list, nuevo, editar)
 - `src/Admin/layouts/AdminLayout.tsx` (deriveTitle para Personal)
 - `src/env.d.ts` (tipado de `useForm`/`useQuery` con genéricos)
 
-**Total:** 30 archivos (25 nuevos, 5 modificados) en iteración feedback.
+**Total:** 31 archivos (26 nuevos, 5 modificados) en iteración feedback.
+
+---
+
+### 3.5 PersonalListPage (DataGrid Gestión Personal)
+
+Implementado basado en https://armorasac.com/app/personal/gestion-personal (legacy Semantic UI DataTable).
+
+**Funcionalidades:**
+- Header "Gestión del Personal" con botón "Crear Personal"
+- Checkbox column (master checkbox + per-row, sin funcionalidad batch por ahora)
+- Columnas: Código, Login, Nombre Completo, Documento, Estado, Acciones
+- Documento se muestra como "DNI: 42920008" (formato `{codigo}: {numero_documento}`)
+- Estado: Chip verde "HABI" (activo) / rojo "INHA" (inactivo)
+- Per-page selector (10, 25, 50, 100, 250, 500) + paginación server-side
+- Búsqueda con debounce implícito (onChange → setSearch → setPage(0))
+- Paginación estilo "1-15 de 23"
+
+**Acciones por fila (IconButtons con Tooltip):**
+- Editar → navega a `/admin/personal/{id}/editar`
+- Cambiar Contraseña → Dialog modal con password + confirm + validación coincidencia
+- Habilitar/Inhabilitar → toggle directo (POST /personal/{id}/toggle-activo) con Snackbar confirmación
+- Eliminar → Dialog de confirmación con soft delete (DELETE /personal/{id})
+
+**Backend añadido:**
+- `PersonalService::toggleActivo(Personal)` — alterna `activo` boolean
+- `PersonalService::resetPassword(Personal, string)` — actualiza password + `password_changed_at`
+- `PersonalController::toggleActivo()` — endpoint POST
+- `PersonalController::resetPassword()` — endpoint POST con validación `confirmed`
+- Rutas: `POST /personal/{personal}/toggle-activo`, `POST /personal/{personal}/reset-password`
+- `personalApi.toggleActivo(id)` y `personalApi.resetPassword(id, password, confirm)` en frontend endpoints.ts
+
+**Ruta en App.tsx:** `/admin/personal` → `PersonalListPage` (lazy import)
+
+## 12. Pendientes (próximos pasos)
+
+- PersonalListPage: Implementar batch actions (habilitar/inhabilitar/eliminar masivo con checkbox)
+- PersonalListPage: Columna "Mapa de Rutas" (requiere Hito 005 Logistics)
+- PersonalListPage: Exportar a Excel/PDF
+- Fotografía: optimization con Intervention\\Image, avatar fallback con iniciales
+- Activity log viewer
+- Portal Proveedor (vista de sus órdenes)
 
 ---
 

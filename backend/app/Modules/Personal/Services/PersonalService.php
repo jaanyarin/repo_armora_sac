@@ -88,6 +88,21 @@ class PersonalService
         $personal->delete();
     }
 
+    public function toggleActivo(Personal $personal): Personal
+    {
+        $personal->update(['activo' => !$personal->activo]);
+        return $personal->fresh(['roles']);
+    }
+
+    public function resetPassword(Personal $personal, string $password): Personal
+    {
+        $this->update($personal, [
+            'password' => $password,
+            'password_confirmation' => $password,
+        ]);
+        return $personal->fresh(['roles', 'documentoIdentidad']);
+    }
+
     public function uploadPhoto(Personal $personal, UploadedFile $file): Personal
     {
         if ($personal->foto_path && Storage::disk('public')->exists($personal->foto_path)) {

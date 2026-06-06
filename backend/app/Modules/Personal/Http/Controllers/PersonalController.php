@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\ValidationException;
 
 class PersonalController extends Controller
 {
@@ -134,5 +135,45 @@ class PersonalController extends Controller
         ])->values();
 
         return response()->json($payload);
+    }
+
+    public function toggleActivo(int $id): JsonResponse
+    {
+        $personal = Personal::find($id);
+        if (!$personal) {
+            return response()->json(['message' => 'Personal no encontrado.'], 404);
+        }
+        $verb = $personal->activo ? 'inhabilitar' : 'habilitar';
+        $permission = $verb === 'inhabilitar' ? 'editar-personal' : 'editar-personal';
+        $this->authorize('update', $personal);
+
+        $personal = $this->personalService->toggleActivo($personal);
+        return response()->json([
+            'message' => $personal->activo ? 'Personal habilitado correctamente.' : 'Personal inhabilitado correctamente.',
+            'data' => new PersonalResource($personal),
+        ]);
+    }
+
+    public function resetPassword(Request $request, int $id): JsonResponse
+    {
+        $personal = Personal::find($id);
+        if (!$personal) {
+            return response()->json(['message' => 'Personal no encontrado.'], 404);
+        }
+        $this->authorize('update', $personal);
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:5', 'max:32', 'confirmed'],
+            'password_confirmation' => ['required', 'string', 'min:5', 'max:32'],
+        ], [
+            'password.required' => 'La nueva contraseña es obligatoria.',
+            'password.min' => 'La contraseña debe tener al menos 5 caracteres.',
+            'password.confirmed' => 'La confirmación de contraseña no coincide.',
+        ]);
+
+        $personal = $this->personalService->resetPassword($personal, $validated['password']);
+        return response()->json([
+            'message' => 'Contraseña actualizada correctamente.',
+        ]);
     }
 }

@@ -10,6 +10,7 @@
 /backend/get_token*.php
 /backend/verify_migration.php
 /backend/serve.err
+/backend/serve.out
 /sesion_estructura_panel_lateral
 
 # IDE / OS
