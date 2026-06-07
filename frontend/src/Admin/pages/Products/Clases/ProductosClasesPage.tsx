@@ -143,6 +143,37 @@ export default function ProductosClasesPage() {
     onError: () => showSnack('Error al eliminar la subclase.', 'error'),
   });
 
+  const saveClaseMut = useMutation({
+    mutationFn: (vars: { id: string | null; payload: Record<string, unknown> }) =>
+      vars.id
+        ? productoClasesApi.update(vars.id, vars.payload)
+        : productoClasesApi.create(vars.payload),
+    onSuccess: (_res: unknown, vars: { id: string | null }) => {
+      invalidateClases();
+      setClaseDialog({ open: false, clase: null });
+      showSnack(vars.id ? 'Clase actualizada.' : 'Clase creada.', 'success');
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      showSnack(err.response?.data?.message || 'Error al guardar la clase.', 'error');
+    },
+  });
+
+  const saveSubclaseMut = useMutation({
+    mutationFn: (vars: { id: string | null; payload: Record<string, unknown> }) =>
+      vars.id
+        ? productoSubclasesApi.update(vars.id, vars.payload)
+        : productoSubclasesApi.create(vars.payload),
+    onSuccess: (_res: unknown, vars: { id: string | null }) => {
+      invalidateSubclases();
+      invalidateClases();
+      setSubclaseDialog({ open: false, claseId: '', subclase: null });
+      showSnack(vars.id ? 'Subclase actualizada.' : 'Subclase creada.', 'success');
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      showSnack(err.response?.data?.message || 'Error al guardar la subclase.', 'error');
+    },
+  });
+
   const handleSelectClase = (id: string) => setSelectedClaseId(id);
   const handleClearClase = () => setSelectedClaseId(null);
 
@@ -367,11 +398,12 @@ export default function ProductosClasesPage() {
       <ClaseFormDialog
         open={claseDialog.open}
         clase={claseDialog.clase}
-        onClose={() => setClaseDialog({ open: false, clase: null })}
-        onSaved={() => {
-          invalidateClases();
-          setClaseDialog({ open: false, clase: null });
-          showSnack(claseDialog.clase ? 'Clase actualizada.' : 'Clase creada.', 'success');
+        isSaving={saveClaseMut.isPending}
+        onSubmit={(payload) =>
+          saveClaseMut.mutate({ id: claseDialog.clase?.id ?? null, payload })
+        }
+        onClose={() => {
+          if (!saveClaseMut.isPending) setClaseDialog({ open: false, clase: null });
         }}
       />
 
@@ -379,12 +411,12 @@ export default function ProductosClasesPage() {
         open={subclaseDialog.open}
         claseId={subclaseDialog.claseId}
         subclase={subclaseDialog.subclase}
-        onClose={() => setSubclaseDialog({ open: false, claseId: '', subclase: null })}
-        onSaved={() => {
-          invalidateSubclases();
-          invalidateClases();
-          setSubclaseDialog({ open: false, claseId: '', subclase: null });
-          showSnack(subclaseDialog.subclase ? 'Subclase actualizada.' : 'Subclase creada.', 'success');
+        isSaving={saveSubclaseMut.isPending}
+        onSubmit={(payload) =>
+          saveSubclaseMut.mutate({ id: subclaseDialog.subclase?.id ?? null, payload })
+        }
+        onClose={() => {
+          if (!saveSubclaseMut.isPending) setSubclaseDialog({ open: false, claseId: '', subclase: null });
         }}
       />
 
@@ -613,12 +645,13 @@ function SubclaseRow({ subclase, onMenu }: { subclase: ProductoSubclase; onMenu:
 interface ClaseFormDialogProps {
   open: boolean;
   clase: ProductoClase | null;
+  isSaving: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSubmit: (payload: Record<string, unknown>) => void;
 }
 
-function ClaseFormDialog({ open, clase, onClose, onSaved }: ClaseFormDialogProps) {
-  const { control, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<ClaseForm>({
+function ClaseFormDialog({ open, clase, isSaving, onClose, onSubmit }: ClaseFormDialogProps) {
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<ClaseForm>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(claseSchema) as any,
     defaultValues: {
@@ -640,23 +673,14 @@ function ClaseFormDialog({ open, clase, onClose, onSaved }: ClaseFormDialogProps
     }
   }, [open, clase, reset]);
 
-  const submit = async (data: ClaseForm) => {
+  const submit = (data: ClaseForm) => {
     const payload: ProductoClasePayload = {
       nombre: data.nombre,
       descripcion: data.descripcion || null,
       licor: data.licor ?? false,
       activo: data.activo ?? true,
     };
-    try {
-      if (clase) {
-        await productoClasesApi.update(clase.id, payload as unknown as Record<string, unknown>);
-      } else {
-        await productoClasesApi.create(payload as unknown as Record<string, unknown>);
-      }
-      onSaved();
-    } catch (e) {
-      console.error(e);
-    }
+    onSubmit(payload as unknown as Record<string, unknown>);
   };
 
   return (
@@ -736,9 +760,9 @@ function ClaseFormDialog({ open, clase, onClose, onSaved }: ClaseFormDialogProps
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
-            {clase ? 'Guardar cambios' : 'Crear clase'}
+          <Button onClick={onClose} disabled={isSaving}>Cancelar</Button>
+          <Button type="submit" variant="contained" disabled={isSaving}>
+            {isSaving ? 'Guardando…' : clase ? 'Guardar cambios' : 'Crear clase'}
           </Button>
         </DialogActions>
       </form>
@@ -750,12 +774,13 @@ interface SubclaseFormDialogProps {
   open: boolean;
   claseId: string;
   subclase: ProductoSubclase | null;
+  isSaving: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSubmit: (payload: Record<string, unknown>) => void;
 }
 
-function SubclaseFormDialog({ open, claseId, subclase, onClose, onSaved }: SubclaseFormDialogProps) {
-  const { control, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<SubclaseForm>({
+function SubclaseFormDialog({ open, claseId, subclase, isSaving, onClose, onSubmit }: SubclaseFormDialogProps) {
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<SubclaseForm>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(subclaseSchema) as any,
     defaultValues: {
@@ -777,23 +802,14 @@ function SubclaseFormDialog({ open, claseId, subclase, onClose, onSaved }: Subcl
     }
   }, [open, claseId, subclase, reset]);
 
-  const submit = async (data: SubclaseForm) => {
+  const submit = (data: SubclaseForm) => {
     const payload: ProductoSubclasePayload = {
       clase_id: data.clase_id,
       nombre: data.nombre,
       descripcion: data.descripcion || null,
       activo: data.activo ?? true,
     };
-    try {
-      if (subclase) {
-        await productoSubclasesApi.update(subclase.id, payload as unknown as Record<string, unknown>);
-      } else {
-        await productoSubclasesApi.create(payload as unknown as Record<string, unknown>);
-      }
-      onSaved();
-    } catch (e) {
-      console.error(e);
-    }
+    onSubmit(payload as unknown as Record<string, unknown>);
   };
 
   return (
@@ -852,9 +868,9 @@ function SubclaseFormDialog({ open, claseId, subclase, onClose, onSaved }: Subcl
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting}>
-            {subclase ? 'Guardar cambios' : 'Crear subclase'}
+          <Button onClick={onClose} disabled={isSaving}>Cancelar</Button>
+          <Button type="submit" variant="contained" disabled={isSaving}>
+            {isSaving ? 'Guardando…' : subclase ? 'Guardar cambios' : 'Crear subclase'}
           </Button>
         </DialogActions>
       </form>
