@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleAndPermissionSeeder::class,
+            ProductoClaseSubclaseSeeder::class,
         ]);
 
         User::updateOrCreate([
