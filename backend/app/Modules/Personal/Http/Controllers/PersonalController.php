@@ -25,7 +25,7 @@ class PersonalController extends Controller
     {
         $this->authorize('viewAny', Personal::class);
         $personal = $this->personalService->paginate(request()->only(['search', 'activo', 'per_page']));
-        return response()->json($personal);
+        return PersonalResource::collection($personal)->response();
     }
 
     public function show(int $id)

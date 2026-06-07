@@ -66,6 +66,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
     const active = sidebarMenu.find((section) =>
       section.items.some((item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/')),
     );
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (active) setOpenSection(active.title);
   }, [location.pathname, isSearching]);
 

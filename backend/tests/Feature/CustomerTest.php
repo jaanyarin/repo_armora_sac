@@ -46,7 +46,7 @@ class CustomerTest extends TestCase
             ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.nombre_completo', 'Cliente Test');
+            ->assertJsonPath('nombre_completo', 'Cliente Test');
     }
 
     public function test_create_customer_with_duplicate_document(): void
@@ -77,13 +77,13 @@ class CustomerTest extends TestCase
                 'nombre_completo' => 'Cliente Test',
             ]);
 
-        $id = $create->json('data.id');
+        $id = $create->json('id');
 
         $response = $this->asAdmin()
             ->getJson("/api/customers/{$id}");
 
         $response->assertOk()
-            ->assertJsonPath('data.id', $id);
+            ->assertJsonPath('id', $id);
     }
 
     public function test_update_customer(): void
@@ -95,7 +95,7 @@ class CustomerTest extends TestCase
                 'nombre_completo' => 'Cliente Test',
             ]);
 
-        $id = $create->json('data.id');
+        $id = $create->json('id');
 
         $response = $this->asAdmin()
             ->putJson("/api/customers/{$id}", [
@@ -103,7 +103,7 @@ class CustomerTest extends TestCase
             ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.nombre_completo', 'Cliente Actualizado');
+            ->assertJsonPath('nombre_completo', 'Cliente Actualizado');
     }
 
     public function test_delete_customer(): void
@@ -115,7 +115,7 @@ class CustomerTest extends TestCase
                 'nombre_completo' => 'Cliente Test',
             ]);
 
-        $id = $create->json('data.id');
+        $id = $create->json('id');
 
         $this->asAdmin()
             ->deleteJson("/api/customers/{$id}")

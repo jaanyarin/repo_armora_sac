@@ -11,19 +11,22 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
+    private string $password = 'admin123';
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RoleAndPermissionSeeder::class);
 
-        User::create([
+        User::factory()->create([
             'codigo' => 'ADMIN-001',
             'username' => 'admin',
             'name' => 'Admin',
             'nombre_completo' => 'Admin Test',
             'email' => 'admin@test.com',
-            'dni' => '12345678',
-            'password' => bcrypt('admin123'),
+            'documento_identidad_id' => 1,
+            'numero_documento' => '12345678',
+            'password' => bcrypt($this->password),
             'activo' => true,
         ])->assignRole('Super-Admin');
     }
@@ -32,7 +35,7 @@ class AuthTest extends TestCase
     {
         $response = $this->postJson('/api/auth/login', [
             'login' => 'admin',
-            'password' => 'admin123',
+            'password' => $this->password,
         ]);
 
         $response->assertOk()
@@ -43,7 +46,7 @@ class AuthTest extends TestCase
     {
         $response = $this->postJson('/api/auth/login', [
             'login' => 'admin@test.com',
-            'password' => 'admin123',
+            'password' => $this->password,
         ]);
 
         $response->assertOk()
@@ -54,7 +57,7 @@ class AuthTest extends TestCase
     {
         $response = $this->postJson('/api/auth/login', [
             'login' => '12345678',
-            'password' => 'admin123',
+            'password' => $this->password,
         ]);
 
         $response->assertOk()
@@ -75,7 +78,7 @@ class AuthTest extends TestCase
     {
         $login = $this->postJson('/api/auth/login', [
             'login' => 'admin',
-            'password' => 'admin123',
+            'password' => $this->password,
         ]);
 
         $token = $login->json('token');
@@ -91,7 +94,7 @@ class AuthTest extends TestCase
     {
         $login = $this->postJson('/api/auth/login', [
             'login' => 'admin',
-            'password' => 'admin123',
+            'password' => $this->password,
         ]);
 
         $token = $login->json('token');
@@ -122,7 +125,7 @@ class AuthTest extends TestCase
     {
         $this->postJson('/api/auth/login', [
             'login' => '1234', // numérico pero no 8 ni 11 dígitos
-            'password' => 'admin123',
+            'password' => $this->password,
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['login']);
@@ -135,7 +138,7 @@ class AuthTest extends TestCase
     {
         $this->postJson('/api/auth/login', [
             'login' => '1234567890', // 10 dígitos, no es RUC válido
-            'password' => 'admin123',
+            'password' => $this->password,
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['login']);

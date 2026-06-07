@@ -36,7 +36,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { personalApi } from '../../../shared/api/endpoints';
-import type { AxiosResponse } from 'axios';
+import type { AxiosError, AxiosResponse } from 'axios';
 
 interface PersonalRow {
   id: number;
@@ -49,18 +49,26 @@ interface PersonalRow {
   roles: string[];
 }
 
+interface PersonalListResponse {
+  data?: PersonalRow[];
+  total?: number;
+  meta?: {
+    total?: number;
+  };
+}
+
 export default function PersonalListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
-  const [perPage, setPerPage] = useState(15);
+  const [perPage, setPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<number[]>([]);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; personal: PersonalRow | null }>({ open: false, personal: null });
   const [passwordDialog, setPasswordDialog] = useState<{ open: boolean; personal: PersonalRow | null; password: string; confirm: string }>({ open: false, personal: null, password: '', confirm: '' });
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery<PersonalListResponse>({
     queryKey: ['personal', page, perPage, search],
     queryFn: async () => {
       const params: Record<string, string | number | boolean> = {
@@ -69,7 +77,7 @@ export default function PersonalListPage() {
       };
       if (search) params.search = search;
       const res = await personalApi.list(params);
-      return res.data;
+      return res.data as PersonalListResponse;
     },
   });
 
@@ -110,7 +118,12 @@ export default function PersonalListPage() {
   });
 
   const rows: PersonalRow[] = data?.data ?? [];
-  const total = data?.total ?? 0;
+  const total = data?.meta?.total ?? data?.total ?? 0;
+  const axiosError = error as AxiosError<{ message?: string }> | undefined;
+  const errorMessage = axiosError?.response?.data?.message
+    ?? (axiosError?.response?.status === 403
+      ? 'No tienes permiso para ver el personal. Ejecuta el seeder de roles/permisos si la BD Docker tiene permisos antiguos.'
+      : 'No se pudo cargar el personal registrado.');
 
   const handleSelectAll = useCallback((checked: boolean) => {
     const currentRows: PersonalRow[] = data?.data ?? [];
@@ -194,6 +207,14 @@ export default function PersonalListPage() {
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                   <CircularProgress />
+                </TableCell>
+              </TableRow>
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                  <Alert severity="error" sx={{ display: 'inline-flex', textAlign: 'left' }}>
+                    {errorMessage}
+                  </Alert>
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (

@@ -13,25 +13,29 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
         ]);
 
-        User::create([
+        User::updateOrCreate([
+            'username' => 'admin',
+        ], [
             'codigo'          => 'ADMIN-001',
-            'username'        => 'admin',
             'name'            => 'Admin',
             'nombre_completo' => 'Administrador del Sistema',
             'email'           => 'admin@armorasac.com',
-            'dni'             => '12345678',
+            'documento_identidad_id' => 1,
+            'numero_documento' => '12345678',
             'password'        => bcrypt('admin123'),
             'telefono'        => '999999999',
             'activo'          => true,
         ])->assignRole('Super-Admin');
 
-        User::create([
+        User::updateOrCreate([
+            'username' => 'vendedor',
+        ], [
             'codigo'          => 'VEND-001',
-            'username'        => 'vendedor',
             'name'            => 'Vendedor',
             'nombre_completo' => 'Vendedor Demo',
             'email'           => 'vendedor@armorasac.com',
-            'dni'             => '87654321',
+            'documento_identidad_id' => 1,
+            'numero_documento' => '87654321',
             'password'        => bcrypt('vendedor123'),
             'activo'          => true,
         ])->assignRole('Vendedor');

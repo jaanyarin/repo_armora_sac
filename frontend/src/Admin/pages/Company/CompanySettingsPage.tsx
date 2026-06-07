@@ -80,6 +80,7 @@ export default function CompanySettingsPage() {
 
   useEffect(() => {
     if (!form.departamento_id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProvincias([]);
       return;
     }
@@ -97,6 +98,7 @@ export default function CompanySettingsPage() {
 
   useEffect(() => {
     if (!form.provincia_id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUbigeos([]);
       return;
     }

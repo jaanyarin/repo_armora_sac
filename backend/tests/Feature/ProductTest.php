@@ -60,7 +60,7 @@ class ProductTest extends TestCase
             ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.nombre', 'Producto Test');
+            ->assertJsonPath('nombre', 'Producto Test');
     }
 
     public function test_create_product_requires_unidad_medida(): void
@@ -83,13 +83,13 @@ class ProductTest extends TestCase
                 'unidad_medida_id' => $umId,
             ]);
 
-        $id = $create->json('data.id');
+        $id = $create->json('id');
 
         $response = $this->asAdmin()
             ->getJson("/api/products/{$id}");
 
         $response->assertOk()
-            ->assertJsonPath('data.id', $id);
+            ->assertJsonPath('id', $id);
     }
 
     public function test_update_product(): void
@@ -102,7 +102,7 @@ class ProductTest extends TestCase
                 'unidad_medida_id' => $umId,
             ]);
 
-        $id = $create->json('data.id');
+        $id = $create->json('id');
 
         $response = $this->asAdmin()
             ->putJson("/api/products/{$id}", [
@@ -110,7 +110,7 @@ class ProductTest extends TestCase
             ]);
 
         $response->assertOk()
-            ->assertJsonPath('data.precio_venta', '250.00');
+            ->assertJsonPath('precio_venta', '250.00');
     }
 
     public function test_delete_product(): void
@@ -123,7 +123,7 @@ class ProductTest extends TestCase
                 'unidad_medida_id' => $umId,
             ]);
 
-        $id = $create->json('data.id');
+        $id = $create->json('id');
 
         $this->asAdmin()
             ->deleteJson("/api/products/{$id}")
