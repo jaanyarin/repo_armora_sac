@@ -62,6 +62,30 @@ export const productsApi = {
   delete: (id: number) => apiClient.delete(`/products/${id}`),
 };
 
+export const productoClasesApi = {
+  list: (params?: Record<string, string | number | boolean>) =>
+    apiClient.get('/products/clases', { params }),
+  find: (id: string) => apiClient.get(`/products/clases/${id}`),
+  create: (data: Record<string, unknown>) =>
+    apiClient.post('/products/clases', data),
+  update: (id: string, data: Record<string, unknown>) =>
+    apiClient.put(`/products/clases/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/products/clases/${id}`),
+  reorder: (ids: string[]) => apiClient.post('/products/clases/reorder', { ids }),
+};
+
+export const productoSubclasesApi = {
+  list: (params?: Record<string, string | number | boolean>) =>
+    apiClient.get('/products/subclases', { params }),
+  find: (id: string) => apiClient.get(`/products/subclases/${id}`),
+  create: (data: Record<string, unknown>) =>
+    apiClient.post('/products/subclases', data),
+  update: (id: string, data: Record<string, unknown>) =>
+    apiClient.put(`/products/subclases/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/products/subclases/${id}`),
+  reorder: (ids: string[]) => apiClient.post('/products/subclases/reorder', { ids }),
+};
+
 export const salesApi = {
   list: (params?: Record<string, string | number | boolean>) =>
     apiClient.get('/sales', { params }),

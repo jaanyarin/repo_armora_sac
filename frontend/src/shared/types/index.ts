@@ -117,14 +117,14 @@ export interface TipoCliente {
   activo: boolean;
 }
 
-export interface ProductoClase {
+export interface DimProductoClase {
   id: number;
   nombre: string;
   descripcion: string | null;
   activo: boolean;
 }
 
-export interface ProductoSubclase {
+export interface DimProductoSubclase {
   id: number;
   clase_id: number;
   nombre: string;
@@ -202,9 +202,9 @@ export interface Product {
   unidad_medida_id: number;
   unidad_medida: UnidadMedida | null;
   producto_clase_id: number | null;
-  producto_clase: ProductoClase | null;
+  producto_clase: DimProductoClase | null;
   producto_subclase_id: number | null;
-  producto_subclase: ProductoSubclase | null;
+  producto_subclase: DimProductoSubclase | null;
   familia_sunat_id: number | null;
   familia_sunat: FamiliaSunat | null;
   clase_sunat_id: number | null;
@@ -593,4 +593,55 @@ export interface CompraPayload {
   estado?: 'borrador' | 'confirmada';
   origen?: 'admin' | 'portal';
   items: CompraItemPayload[];
+}
+
+export interface ProductoClase {
+  id: string;
+  codigo: string;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  licor: boolean;
+  orden: number;
+  activo: boolean;
+  subclases_count?: number;
+  subclases?: ProductoSubclase[];
+  created_at?: string | null;
+  updated_at?: string | null;
+  deleted_at?: string | null;
+}
+
+export interface ProductoSubclase {
+  id: string;
+  clase_id: string;
+  clase?: { id: string; codigo: string; nombre: string } | null;
+  codigo: string;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  orden: number;
+  activo: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+  deleted_at?: string | null;
+}
+
+export interface ProductoClasePayload {
+  codigo?: string | null;
+  nombre: string;
+  slug?: string | null;
+  descripcion?: string | null;
+  licor?: boolean;
+  orden?: number;
+  activo?: boolean;
+}
+
+export interface ProductoSubclasePayload {
+  clase_id: string;
+  codigo?: string | null;
+  nombre: string;
+  slug?: string | null;
+  descripcion?: string | null;
+  orden?: number;
+  activo?: boolean;
 }

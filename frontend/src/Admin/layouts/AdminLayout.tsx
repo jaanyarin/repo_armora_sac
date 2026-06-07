@@ -29,6 +29,7 @@ function deriveTitle(pathname: string): string {
     return 'Clientes';
   }
   if (pathname.startsWith('/admin/productos')) {
+    if (pathname.includes('/clases')) return 'Clases y Subclases';
     if (pathname.includes('/nuevo')) return 'Nuevo Producto';
     if (pathname.includes('/editar')) return 'Editar Producto';
     return 'Productos';

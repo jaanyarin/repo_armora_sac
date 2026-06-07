@@ -5,6 +5,8 @@ use App\Modules\Catalog\Http\Controllers\CatalogController;
 use App\Modules\Customers\Http\Controllers\CustomerController;
 use App\Modules\Inventory\Http\Controllers\InventoryController;
 use App\Modules\Products\Http\Controllers\ProductController;
+use App\Modules\Products\Http\Controllers\ProductoClaseController;
+use App\Modules\Products\Http\Controllers\ProductoSubclaseController;
 use App\Modules\Sales\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,11 +55,25 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('products')->group(function () {
+        Route::get('clases', [ProductoClaseController::class, 'index'])->middleware('permission:ver-clases');
+        Route::get('clases/{clase}', [ProductoClaseController::class, 'show'])->where('clase', '[0-9A-Za-z]{26}')->middleware('permission:ver-clases');
+        Route::post('clases', [ProductoClaseController::class, 'store'])->middleware('permission:crear-clases');
+        Route::put('clases/{clase}', [ProductoClaseController::class, 'update'])->where('clase', '[0-9A-Za-z]{26}')->middleware('permission:editar-clases');
+        Route::delete('clases/{clase}', [ProductoClaseController::class, 'destroy'])->where('clase', '[0-9A-Za-z]{26}')->middleware('permission:eliminar-clases');
+        Route::post('clases/reorder', [ProductoClaseController::class, 'reorder'])->middleware('permission:editar-clases');
+
+        Route::get('subclases', [ProductoSubclaseController::class, 'index'])->middleware('permission:ver-subclases');
+        Route::get('subclases/{subclase}', [ProductoSubclaseController::class, 'show'])->where('subclase', '[0-9A-Za-z]{26}')->middleware('permission:ver-subclases');
+        Route::post('subclases', [ProductoSubclaseController::class, 'store'])->middleware('permission:crear-subclases');
+        Route::put('subclases/{subclase}', [ProductoSubclaseController::class, 'update'])->where('subclase', '[0-9A-Za-z]{26}')->middleware('permission:editar-subclases');
+        Route::delete('subclases/{subclase}', [ProductoSubclaseController::class, 'destroy'])->where('subclase', '[0-9A-Za-z]{26}')->middleware('permission:eliminar-subclases');
+        Route::post('subclases/reorder', [ProductoSubclaseController::class, 'reorder'])->middleware('permission:editar-subclases');
+
         Route::get('/', [ProductController::class, 'index'])->middleware('permission:ver-productos');
-        Route::get('{product}', [ProductController::class, 'show'])->middleware('permission:ver-productos');
+        Route::get('{product}', [ProductController::class, 'show'])->where('product', '[0-9]+')->middleware('permission:ver-productos');
         Route::post('/', [ProductController::class, 'store'])->middleware('permission:crear-productos');
-        Route::put('{product}', [ProductController::class, 'update'])->middleware('permission:editar-productos');
-        Route::delete('{product}', [ProductController::class, 'destroy'])->middleware('permission:eliminar-productos');
+        Route::put('{product}', [ProductController::class, 'update'])->where('product', '[0-9]+')->middleware('permission:editar-productos');
+        Route::delete('{product}', [ProductController::class, 'destroy'])->where('product', '[0-9]+')->middleware('permission:eliminar-productos');
     });
 
     Route::prefix('sales')->group(function () {
