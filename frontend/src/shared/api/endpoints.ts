@@ -76,6 +76,30 @@ export const salesApi = {
     apiClient.post(`/sales/${id}/nota-credito`, data),
 };
 
+export const purchasesApi = {
+  list: (params?: Record<string, string | number | boolean>) =>
+    apiClient.get('/purchases/compras', { params }),
+  find: (id: string) => apiClient.get(`/purchases/compras/${id}`),
+  create: (data: Record<string, unknown>) =>
+    apiClient.post('/purchases/compras', data),
+  update: (id: string, data: Record<string, unknown>) =>
+    apiClient.put(`/purchases/compras/${id}`, data),
+  confirmar: (id: string) => apiClient.post(`/purchases/compras/${id}/confirmar`),
+  anular: (id: string) => apiClient.post(`/purchases/compras/${id}/anular`),
+  delete: (id: string) => apiClient.delete(`/purchases/compras/${id}`),
+};
+
+export const proveedoresApi = {
+  list: (params?: Record<string, string | number | boolean>) =>
+    apiClient.get('/purchases/proveedores', { params }),
+  find: (id: string) => apiClient.get(`/purchases/proveedores/${id}`),
+  create: (data: Record<string, unknown>) =>
+    apiClient.post('/purchases/proveedores', data),
+  update: (id: string, data: Record<string, unknown>) =>
+    apiClient.put(`/purchases/proveedores/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/purchases/proveedores/${id}`),
+};
+
 export const empresaApi = {
   get: () => apiClient.get('/empresa'),
   update: (data: Record<string, unknown>) => apiClient.put('/empresa', data),

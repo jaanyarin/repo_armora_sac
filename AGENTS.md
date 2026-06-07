@@ -18,11 +18,11 @@
 
 ## Estado actual del proyecto
 
-**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) en validación + Hito 004a Company Settings implementado + Hito 007 Personal cerrado + iteración feedback Hito 007 aplicada + Gestión Personal + Reportes Personal** — Sales + Inventory + **Purchases** completo (backend) + **Company** (backend + frontend) + **Personal** (backend + frontend CRUD completo + iteración ficha + reportes) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B + 4 fixes Personal + 3 migraciones + 6 cambios de feedback + 5 tests reportes.
+**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) cerrado + Hito 004a Company Settings cerrado + Hito 007 Personal cerrado + iteración feedback Hito 007 aplicada + Gestión Personal + Reportes Personal + Hito 005 frontend PurchaseFormPage implementado** — Sales + Inventory + **Purchases** completo (backend + frontend "Crear Compra") + **Company** (backend + frontend) + **Personal** (backend + frontend CRUD completo + iteración ficha + reportes) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B + 4 fixes Personal + 3 migraciones + 6 cambios de feedback + 5 tests reportes.
 Módulos funcionales: Auth, Catalog, Customers, Products, **Sales, Inventory, Purchases, Company, Personal**.
 Portal Cliente: catálogo público + login + dashboard + **pedidos (carrito + checkout + historial)** con navegación responsive.
 
-**Próximo:** Hito 004 Finance (Ola C) ⏸ diferido + Hito 005 Logistics (Mapa de Rutas) ⏸.
+**Próximo:** Hito 005 PurchaseListPage (DataGrid) + vista detalle + Hito 005 Logistics (Mapa de Rutas) ⏸.
 
 ### Arquitectura backend
 
@@ -287,13 +287,15 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 - ✅ PersonalTest pasa **23/23** (75 assertions); suite completa no pre-existente: 67/67 passing (Personal 23 + Inventory 4 + Sales 18 + Purchases 19 + Company 3)
 - ✅ `PersonalListPage` (DataGrid) implementado (2026-06-07)
 - ✅ `Reportes Personal` implementado (2 cards: Personal Activo + Ficha Personal, HTML printable con `window.print()`) (2026-06-07)
+- ✅ **PurchaseFormPage frontend** implementado con UX/UI mejorada: bloqueo proactivo de empresa, autocomplete server-side con debounce, snapshot de costo promedio, sticky bottom bar con totales, 2 CTAs (borrador/confirmar), validación inline, snackbar feedback. Bundle: 16.24 kB / 5.89 kB gzip. Doc: `_docs_desarrollo/HITO-005-purchases-frontend.md` (2026-06-07)
 
 ### Hito 005 — Logistics + Loyalty
 - Rutas, zonas, transportistas
 - Programa de canje y premios
-- Frontend Admin Purchases completo
+- Frontend Admin Purchases (Form ✅, List ⏳, Detalle ⏳)
 - Inventory Admin completo (stock + kardex)
 - PersonalListPage (DataGrid) + Gestión Personal completa + **Reportes Personal** (2 cards: Personal Activo + Ficha Personal) ✅
+- **PurchaseFormPage** ✅: bloquea ventas/compras si flag activo, autocomplete proveedores (debounce 350 ms), snapshot de `costo_promedio`, sticky bottom bar con IGV 18% en vivo, 2 CTAs (Guardar borrador / Crear y confirmar). Doc `_docs_desarrollo/HITO-005-purchases-frontend.md`
 
 ### Hito 006 — Cross-cutting
 - CI/CD (GitHub Actions)

@@ -496,3 +496,101 @@ export interface PermisoAgrupado {
   modulo: string;
   permisos: { id: number; name: string; descripcion: string }[];
 }
+
+export interface Proveedor {
+  id: string;
+  codigo: string;
+  tipo_documento_id: number | null;
+  numero_documento: string | null;
+  nombre_completo: string;
+  direccion: string | null;
+  telefono: string | null;
+  email: string | null;
+  contacto_nombre: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Almacen {
+  id: number;
+  codigo: string;
+  nombre: string;
+  direccion: string | null;
+  telefono: string | null;
+  principal: boolean;
+  activo: boolean;
+}
+
+export interface CompraItem {
+  id: string;
+  compra_id: string;
+  producto_id: number;
+  producto?: {
+    id: number;
+    codigo: string;
+    nombre: string;
+  };
+  unidad_medida_id: number;
+  numero_linea: number;
+  cantidad: number;
+  precio_unitario: number;
+  descuento_linea: number;
+  subtotal: number;
+  igv: number;
+  total: number;
+  observaciones: string | null;
+}
+
+export type CompraEstado = 'borrador' | 'confirmada' | 'anulada' | 'pagada' | 'parcial';
+
+export interface Compra {
+  id: string;
+  codigo: string;
+  proveedor_id: string;
+  proveedor?: Proveedor;
+  usuario_id: number;
+  documento_tipo_id: number | null;
+  serie: string | null;
+  numero: string | null;
+  fecha_emision: string | null;
+  fecha_vencimiento: string | null;
+  moneda_id: number | null;
+  almacen_id: number | null;
+  subtotal: number;
+  descuento_global: number;
+  igv: number;
+  isc: number;
+  total: number;
+  saldo_pendiente: number;
+  estado: CompraEstado;
+  observaciones: string | null;
+  origen: 'admin' | 'portal';
+  items?: CompraItem[];
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface CompraItemPayload {
+  producto_id: number;
+  unidad_medida_id: number;
+  cantidad: number;
+  precio_unitario: number;
+  descuento_linea?: number;
+  observaciones?: string;
+}
+
+export interface CompraPayload {
+  proveedor_id: string;
+  almacen_id?: number | null;
+  fecha_emision: string;
+  fecha_vencimiento?: string | null;
+  documento_tipo_id?: number | null;
+  serie?: string | null;
+  numero?: string | null;
+  moneda_id?: number | null;
+  observaciones?: string | null;
+  estado?: 'borrador' | 'confirmada';
+  origen?: 'admin' | 'portal';
+  items: CompraItemPayload[];
+}
