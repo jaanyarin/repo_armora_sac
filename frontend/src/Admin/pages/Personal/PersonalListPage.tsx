@@ -249,7 +249,7 @@ export default function PersonalListPage() {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={row.activo ? 'HABI' : 'INHA'}
+                      label={row.activo ? 'Activo' : 'No activo'}
                       size="small"
                       sx={{
                         fontWeight: 600,

@@ -399,4 +399,60 @@ class PersonalTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['pid']);
     }
+
+    public function test_show_personal_includes_related_ids_as_int_arrays(): void
+    {
+        $permIds = \Spatie\Permission\Models\Permission::orderBy('id')->limit(2)->pluck('id')->all();
+        $listaIds = \Illuminate\Support\Facades\DB::table('dim_lista_precios')->orderBy('id')->limit(1)->pluck('id')->all();
+        $almacenIds = \Illuminate\Support\Facades\DB::table('dim_almacen')->orderBy('id')->limit(1)->pluck('id')->all();
+
+        $create = $this->withToken($this->adminToken)->postJson('/api/personal', $this->payload([
+            'username' => 'jperezid',
+            'apellido_paterno' => 'PérezID',
+            'apellido_materno' => 'LópezID',
+            'nombres' => 'JuanID',
+            'email' => 'jperezid@test.com',
+            'numero_documento' => '33333333',
+            'roles' => ['Vendedor'],
+            'permisos' => $permIds,
+            'listas_precios' => $listaIds,
+            'almacenes' => $almacenIds,
+        ]))->assertCreated();
+        $id = $create->json('data.id');
+
+        $response = $this->withToken($this->adminToken)->getJson("/api/personal/{$id}");
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    'permisos',
+                    'listas_precios_ids',
+                    'almacenes_ids',
+                    'permisos_directos',
+                    'listas_precios',
+                    'almacenes',
+                ],
+            ])
+            ->assertJsonPath('data.permisos', array_map('intval', $permIds))
+            ->assertJsonPath('data.listas_precios_ids', array_map('intval', $listaIds))
+            ->assertJsonPath('data.almacenes_ids', array_map('intval', $almacenIds));
+    }
+
+    public function test_show_personal_includes_empty_arrays_when_no_relations(): void
+    {
+        $create = $this->withToken($this->adminToken)->postJson('/api/personal', $this->payload([
+            'username' => 'jvoid',
+            'apellido_paterno' => 'Vacio',
+            'apellido_materno' => 'Sin',
+            'nombres' => 'Relaciones',
+            'email' => 'vacio@test.com',
+            'numero_documento' => '44444444',
+        ]))->assertCreated();
+        $id = $create->json('data.id');
+
+        $response = $this->withToken($this->adminToken)->getJson("/api/personal/{$id}");
+        $response->assertOk()
+            ->assertJsonPath('data.permisos', [])
+            ->assertJsonPath('data.listas_precios_ids', [])
+            ->assertJsonPath('data.almacenes_ids', []);
+    }
 }

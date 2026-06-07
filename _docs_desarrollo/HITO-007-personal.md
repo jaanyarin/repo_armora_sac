@@ -1,8 +1,8 @@
 # HITO-007 — Módulo Personal (CRUD Backend + Formulario Frontend)
 
-**Estado:** ✅ Cerrado + Iteración feedback + Gestión Personal + Reportes Personal implementados
+**Estado:** ✅ Cerrado + Iteración feedback + Gestión Personal + Reportes Personal + Fixes UX edición implementados
 **Fecha original:** 2026-06-06
-**Última actualización:** 2026-06-07 (Reportes Personal + auditoría integral)
+**Última actualización:** 2026-06-07 (fixes UX edición: estado legible, persistencia permisos/listas/almacenes, select all por grupo, alert seguridad passwords)
 **Iteración:** Senior Fullstack ERP Architect v3
 **Dependencias:** AGENTS.md (Hito 003-004a), perfil arquitecto v3
 
@@ -335,7 +335,7 @@ Esto también arregló errores pre-existentes en `OrderHistoryPage.tsx:42` (`isE
 
 ---
 
-## 5. Tests (23/23 Personal, 100/100 backend — post auditoría 2026-06-07)
+## 5. Tests (30/30 Personal, 93/93 backend — post fixes UX edición 2026-06-07)
 
 `backend/tests/Feature/PersonalTest.php` con **23 casos** que cubren (1 nuevo `test_create_personal_allows_only_one_role`):
 
@@ -435,25 +435,26 @@ Reutiliza el patrón del Hito 004a (Company). Requiere ejecutar `php artisan sto
 ```bash
 # Backend tests
 cd backend && php artisan test --filter=PersonalTest
-# → 28 passed, 0 failed (5 nuevos: reportes personal-activo/ficha + RBAC + validación pid)
+# → 30 passed, 0 failed (5 reportes + 2 nuevos: IDs permisos/listas/almacenes en resource)
 
 # Backend tests (suite completa filtrada)
 php artisan test --filter='PersonalTest|CompanyTest|EmpresaTest|InventoryTest|SaleTest|CompraTest|ProveedorTest|AuthTest'
-# → 91 passed, 0 failed, 285 assertions
+# → 93 passed, 0 failed, 302 assertions
 
 # Frontend build
 cd frontend && npm run build
-# → ✓ built in ~2.6s, sin errores TS
+# → ✓ built in ~3s, sin errores TS
 
 # Lint
 cd frontend && npm run lint
 # → 0 errores, 1 warning Personal (watch RHF API, pre-existente)
 
-# Manual: probar reportes en browser
+# Manual: probar wizard + reportes en browser
 cd backend && php artisan serve --port=8005   # en una terminal
 cd frontend && npm run dev                      # en otra terminal (puerto 5175)
+# → http://localhost:5175/admin/personal (estado "Activo"/"No activo")
+# → http://localhost:5175/admin/personal/{id}/editar (alert password + step 4 persistente)
 # → http://localhost:5175/admin/personal/reportes
-# → http://localhost:5175/admin/personal/nuevo
 ```
 
 ---
@@ -629,6 +630,74 @@ Si en el futuro se requiere PDF directo (sin pasar por la UI del navegador), se 
 - Portal Proveedor (vista de sus órdenes)
 - Reportes Personal: agregar PDF directo (sin pasar por print dialog) si el cliente lo pide
 - Reportes Personal: filtros adicionales (por rol, por almacén, por fecha de ingreso)
+
+---
+
+## 13. Iteración UX edición (2026-06-07)
+
+Aplicada tras feedback de auditoría visual de la pantalla `/admin/personal` → "Editar Personal".
+
+### 13.1 Cambios solicitados
+
+1. **Estado en `PersonalListPage`**: Cambiar etiquetas `HABI` / `INHA` por `Activo` / `No activo`.
+2. **Contraseñas no se previsualizan al editar**: Por seguridad, las contraseñas están hasheadas con `Hash::make()` (bcrypt) en la BD — la API **NO PUEDE** devolver el plaintext. Se agregó un `Alert` info en el step 1 del wizard explicando el motivo y cómo proceder.
+3. **Step 4 Permisos Directos**:
+   - Persistencia: al editar, los permisos directos guardados no aparecían seleccionados (resource retornaba nombres, form esperaba IDs).
+   - UX: agregar "Seleccionar todo" / "Deseleccionar todo" global y checkbox por grupo (módulo) con estado `indeterminate`.
+4. **Step 4 Listas de Precios + Almacenes**:
+   - Persistencia: al editar, los IDs guardados no se pre-cargaban (resource retornaba objetos `{id, nombre}`, form esperaba `int[]`).
+
+### 13.2 Cambios aplicados
+
+**Backend (1 archivo):**
+- `app/Modules/Personal/Http/Resources/PersonalResource.php`: 3 campos nuevos que retornan `int[]`:
+  - `permisos`: IDs de `permisosDirectos` (sin prefijo `_ids` para mantener consistencia con el form)
+  - `listas_precios_ids`: IDs de `listasPrecios` (con prefijo para no colisionar con el array de objetos `listas_precios`)
+  - `almacenes_ids`: IDs de `almacenes` (mismo motivo)
+
+**Tests backend (2 nuevos):**
+- `test_show_personal_includes_related_ids_as_int_arrays`: valida que los 3 campos se serializan como `int[]` correctos
+- `test_show_personal_includes_empty_arrays_when_no_relations`: valida caso sin relaciones (arrays vacíos)
+
+**Frontend (2 archivos):**
+- `src/shared/types/index.ts`: `Personal` interface extendida con 3 campos: `permisos: number[]`, `listas_precios_ids: number[]`, `almacenes_ids: number[]`
+- `src/Admin/pages/Personal/PersonalFormPage.tsx`:
+  - `reset()` mapea los 3 campos correctamente (`permisos: data.permisos`, `listas_precios: data.listas_precios_ids`, `almacenes: data.almacenes_ids`)
+  - Step 1 (Datos Personales) — `Alert severity="info"` con icono `LockIcon` explicando seguridad de passwords (solo en modo edición)
+  - Helper text del password en edición: "Dejar en blanco para mantener la actual"
+  - Step 4 (Permisos y Accesos) — Permisos Directos:
+    - Header con counter "X de Y permisos seleccionados"
+    - Botón "Seleccionar todo" (selecciona todos los IDs de todos los módulos)
+    - Botón "Deseleccionar todo" (limpia el array)
+    - Cada grupo (módulo) tiene:
+      - Checkbox maestro con `indeterminate` cuando hay selección parcial
+      - Click en checkbox de grupo: si todos están marcados → desmarca ese grupo; si no → marca todo el grupo
+      - Counter inline "N / M" al lado derecho del header
+- `src/Admin/pages/Personal/PersonalListPage.tsx`:
+  - Chip de estado: `HABI` → `Activo`, `INHA` → `No activo`
+
+### 13.3 Decisiones técnicas
+
+- **Mantener `listas_precios` y `listas_precios_ids` separados**: el resource sigue retornando el array de objetos para mostrar nombre en UI; el `_ids` es solo para el form. Esto evita breaking changes con `PersonalListPage` y `ReportesPersonalPage` que ya consumen `listas_precios` como objetos.
+- **Permisos se llaman `permisos` (sin sufijo)**: el form ya esperaba `permisos: number[]`, así que el field name se mantiene; los `permisos_directos` (nombres como strings) se conservan para casos de uso que requieren el slug legible.
+- **Group checkbox usa `setValue('permisos', merged, { shouldDirty: true })`** (no `field.onChange`): el form está en modo RHF pero el campo se gestiona manualmente con `setValue`/`getValues` (no usa `<Controller>`), por lo que `shouldDirty: true` es necesario para que RHF registre el cambio y dispare la validación/submit.
+- **Alert con `icon={<LockIcon fontSize="inherit" />}`**: el icono por defecto del `Alert severity="info"` es `InfoOutlinedIcon`; lo reemplazamos por `LockIcon` para reforzar visualmente el contexto de seguridad.
+
+### 13.4 Trade-offs aceptados
+
+- El usuario NO puede ver la contraseña actual nunca (decisión correcta de seguridad; OWASP A02:2025 — Cryptographic Failures).
+- Si el usuario olvidó la contraseña, debe usar la acción "Cambiar Contraseña" del listado (botón con `LockIcon`) o pedirle al admin que use el mismo flujo.
+- El botón "Seleccionar todo" puede asignar muchos permisos de golpe. No hay confirmación. Si se hace por error, el usuario puede desmarcar manualmente. (Mejora futura: `Dialog` de confirmación si se marcan >20 permisos.)
+
+### 13.5 Validación
+
+| Check | Resultado |
+|---|---|
+| `php artisan test --filter=PersonalTest` | **30/30 passing** (122 assertions) |
+| Suite filtrada completa | **93/93 passing** (302 assertions) |
+| `npm run build` | ✅ built in 2.99s |
+| `npm run lint` | ✅ 0 errors, 1 warning pre-existente |
+| Curl `GET /api/personal/1` | 200 con `permisos:[1,2,3,4]`, `listas_precios_ids:[1]`, `almacenes_ids:[1]` |
 
 ---
 

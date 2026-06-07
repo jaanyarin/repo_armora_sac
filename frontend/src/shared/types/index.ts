@@ -432,8 +432,11 @@ export interface Personal {
   password_changed_at: string | null;
   roles: string[];
   permisos_directos: string[];
+  permisos: number[];
   listas_precios: { id: number; nombre: string }[];
+  listas_precios_ids: number[];
   almacenes: { id: number; nombre: string }[];
+  almacenes_ids: number[];
   created_at: string;
   updated_at: string;
 }

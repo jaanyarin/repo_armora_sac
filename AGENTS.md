@@ -18,7 +18,7 @@
 
 ## Estado actual del proyecto
 
-**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) cerrado + Hito 004a Company Settings cerrado + Hito 007 Personal cerrado + iteración feedback Hito 007 aplicada + Gestión Personal + Reportes Personal + Hito 005 frontend PurchaseFormPage implementado** — Sales + Inventory + **Purchases** completo (backend + frontend "Crear Compra") + **Company** (backend + frontend) + **Personal** (backend + frontend CRUD completo + iteración ficha + reportes) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B + 4 fixes Personal + 3 migraciones + 6 cambios de feedback + 5 tests reportes.
+**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) cerrado + Hito 004a Company Settings cerrado + Hito 007 Personal cerrado + iteración feedback Hito 007 aplicada + Gestión Personal + Reportes Personal + Fixes UX edición (estado legible, persistencia permisos/listas/almacenes, select all por grupo) + Hito 005 frontend PurchaseFormPage implementado** — Sales + Inventory + **Purchases** completo (backend + frontend "Crear Compra") + **Company** (backend + frontend) + **Personal** (backend + frontend CRUD completo + iteración ficha + reportes + 4 fixes UX edición) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B + 4 fixes Personal + 3 migraciones + 6 cambios de feedback + 5 tests reportes + 2 tests resource IDs.
 Módulos funcionales: Auth, Catalog, Customers, Products, **Sales, Inventory, Purchases, Company, Personal**.
 Portal Cliente: catálogo público + login + dashboard + **pedidos (carrito + checkout + historial)** con navegación responsive.
 

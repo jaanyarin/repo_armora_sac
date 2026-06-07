@@ -55,12 +55,15 @@ class PersonalResource extends JsonResource
 
             'roles' => $this->whenLoaded('roles', fn() => $this->roles->pluck('name')),
             'permisos_directos' => $this->whenLoaded('permisosDirectos', fn() => $this->permisosDirectos->pluck('name')),
+            'permisos' => $this->whenLoaded('permisosDirectos', fn() => $this->permisosDirectos->pluck('id')->map(fn($v) => (int) $v)->values()),
             'listas_precios' => $this->whenLoaded('listasPrecios', fn() => $this->listasPrecios->map(fn($lp) => [
                 'id' => $lp->id, 'nombre' => $lp->nombre,
             ])),
+            'listas_precios_ids' => $this->whenLoaded('listasPrecios', fn() => $this->listasPrecios->pluck('id')->map(fn($v) => (int) $v)->values()),
             'almacenes' => $this->whenLoaded('almacenes', fn() => $this->almacenes->map(fn($a) => [
                 'id' => $a->id, 'nombre' => $a->nombre,
             ])),
+            'almacenes_ids' => $this->whenLoaded('almacenes', fn() => $this->almacenes->pluck('id')->map(fn($v) => (int) $v)->values()),
 
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

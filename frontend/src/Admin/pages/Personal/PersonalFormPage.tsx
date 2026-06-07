@@ -9,6 +9,7 @@ import {
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import LockIcon from '@mui/icons-material/Lock';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -156,20 +157,23 @@ export default function PersonalFormPage() {
     defaultValues,
   });
 
-  useEffect(() => {
-    if (personalData) {
-      reset({
-        ...defaultValues,
-        ...personalData,
-        password: '',
-        password_confirmation: '',
-        roles: personalData.roles ?? [],
-      });
-      if (personalData.departamento_id) setDepartamentoId(personalData.departamento_id);
-      if (personalData.provincia_id) setProvinciaId(personalData.provincia_id);
-      if (personalData.foto_url) setFotoPreview(personalData.foto_url);
-    }
-  }, [personalData, reset]);
+    useEffect(() => {
+      if (personalData) {
+        reset({
+          ...defaultValues,
+          ...personalData,
+          password: '',
+          password_confirmation: '',
+          roles: personalData.roles ?? [],
+          permisos: personalData.permisos ?? [],
+          listas_precios: personalData.listas_precios_ids ?? [],
+          almacenes: personalData.almacenes_ids ?? [],
+        });
+        if (personalData.departamento_id) setDepartamentoId(personalData.departamento_id);
+        if (personalData.provincia_id) setProvinciaId(personalData.provincia_id);
+        if (personalData.foto_url) setFotoPreview(personalData.foto_url);
+      }
+    }, [personalData, reset]);
 
   const createMutation = useMutation({
     mutationFn: (data: FormDataState) => {
@@ -295,8 +299,14 @@ export default function PersonalFormPage() {
           {step === 0 && (
             <Box>
               <Typography variant="h6" mb={2}>Datos Personales</Typography>
+              {isEdit && (
+                <Alert severity="info" sx={{ mb: 2 }} icon={<LockIcon fontSize="inherit" />}>
+                  Por seguridad, las contraseñas se almacenan cifradas y <strong>no se pueden mostrar ni recuperar</strong>.
+                  Si desea cambiar la contraseña del usuario, ingrésela a continuación. Para mantener la actual, deje los campos en blanco.
+                </Alert>
+              )}
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 4 }}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <Controller name="username" control={control} render={({ field }) => (
                     <TextField {...field} fullWidth label="Username" required error={!!errors.username} helperText={errors.username?.message} />
                   )} />
@@ -325,7 +335,7 @@ export default function PersonalFormPage() {
                       label={isEdit ? 'Nueva Contraseña (opcional)' : 'Contraseña'}
                       required={!isEdit}
                       error={!!errors.password}
-                      helperText={errors.password?.message ?? 'Mínimo 5 caracteres'}
+                      helperText={errors.password?.message ?? (isEdit ? 'Dejar en blanco para mantener la actual' : 'Mínimo 5 caracteres')}
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end">
@@ -601,26 +611,84 @@ export default function PersonalFormPage() {
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <Divider sx={{ my: 1 }} />
-                  <Typography variant="subtitle1" gutterBottom>Permisos Directos (adicionales al rol)</Typography>
-                  {(permisosAgrupados ?? []).map((grupo) => (
-                    <Box key={grupo.modulo} sx={{ mb: 2, border: '1px solid', borderColor: 'divider', p: 2, borderRadius: 1 }}>
-                      <Typography variant="subtitle2" gutterBottom>{grupo.modulo}</Typography>
-                      <FormGroup row>
-                        {grupo.permisos.map((permiso) => (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                    <Box>
+                      <Typography variant="subtitle1" gutterBottom>Permisos Directos (adicionales al rol)</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {selectedPermisos.length} de {(permisosAgrupados ?? []).reduce((acc, g) => acc + g.permisos.length, 0)} permisos seleccionados
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          const allIds = (permisosAgrupados ?? []).flatMap((g) => g.permisos.map((p) => p.id));
+                          setValue('permisos', allIds, { shouldDirty: true });
+                        }}
+                      >
+                        Seleccionar todo
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => setValue('permisos', [], { shouldDirty: true })}
+                      >
+                        Deseleccionar todo
+                      </Button>
+                    </Box>
+                  </Box>
+                  {(permisosAgrupados ?? []).map((grupo) => {
+                    const grupoIds = grupo.permisos.map((p) => p.id);
+                    const selectedEnGrupo = grupoIds.filter((id) => selectedPermisos.includes(id));
+                    const allChecked = grupoIds.length > 0 && selectedEnGrupo.length === grupoIds.length;
+                    const someChecked = selectedEnGrupo.length > 0 && selectedEnGrupo.length < grupoIds.length;
+                    return (
+                      <Box key={grupo.modulo} sx={{ mb: 2, border: '1px solid', borderColor: 'divider', p: 2, borderRadius: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                           <FormControlLabel
-                            key={permiso.id}
                             control={
                               <Checkbox
-                                checked={selectedPermisos.includes(permiso.id)}
-                                onChange={() => togglePermiso(permiso.id)}
+                                checked={allChecked}
+                                indeterminate={someChecked}
+                                onChange={() => {
+                                  if (allChecked) {
+                                    setValue('permisos', selectedPermisos.filter((id) => !grupoIds.includes(id)), { shouldDirty: true });
+                                  } else {
+                                    const merged = Array.from(new Set([...selectedPermisos, ...grupoIds]));
+                                    setValue('permisos', merged, { shouldDirty: true });
+                                  }
+                                }}
                               />
                             }
-                            label={permiso.descripcion || permiso.name}
+                            label={
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                {grupo.modulo}
+                              </Typography>
+                            }
                           />
-                        ))}
-                      </FormGroup>
-                    </Box>
-                  ))}
+                          <Typography variant="caption" color="text.secondary">
+                            {selectedEnGrupo.length} / {grupoIds.length}
+                          </Typography>
+                        </Box>
+                        <FormGroup row>
+                          {grupo.permisos.map((permiso) => (
+                            <FormControlLabel
+                              key={permiso.id}
+                              control={
+                                <Checkbox
+                                  checked={selectedPermisos.includes(permiso.id)}
+                                  onChange={() => togglePermiso(permiso.id)}
+                                />
+                              }
+                              label={permiso.descripcion || permiso.name}
+                            />
+                          ))}
+                        </FormGroup>
+                      </Box>
+                    );
+                  })}
                 </Grid>
               </Grid>
             </Box>
