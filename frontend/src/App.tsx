@@ -25,6 +25,7 @@ const SupplierFormPage = lazy(() => import('./Admin/pages/Suppliers/SupplierForm
 const CompanySettingsPage = lazy(() => import('./Admin/pages/Company/CompanySettingsPage'));
 const PersonalFormPage = lazy(() => import('./Admin/pages/Personal/PersonalFormPage'));
 const PersonalListPage = lazy(() => import('./Admin/pages/Personal/PersonalListPage'));
+const ReportesPersonalPage = lazy(() => import('./Admin/pages/Personal/ReportesPersonalPage'));
 const PortalLoginPage = lazy(() => import('./Portal/pages/PortalLoginPage'));
 const PortalDashboardPage = lazy(() => import('./Portal/pages/PortalDashboardPage'));
 const ProductCatalogPage = lazy(() => import('./Portal/pages/ProductCatalogPage'));
@@ -70,6 +71,7 @@ function AppWithAuth() {
           <Route path="personal/nuevo" element={<SuspenseWrapper><PersonalFormPage /></SuspenseWrapper>} />
           <Route path="personal/:id/editar" element={<SuspenseWrapper><PersonalFormPage /></SuspenseWrapper>} />
           <Route path="personal" element={<SuspenseWrapper><PersonalListPage /></SuspenseWrapper>} />
+          <Route path="personal/reportes" element={<SuspenseWrapper><ReportesPersonalPage /></SuspenseWrapper>} />
           <Route path="compras" element={<SuspenseWrapper><PurchaseListPage /></SuspenseWrapper>} />
           <Route path="compras/nueva" element={<SuspenseWrapper><PurchaseFormPage /></SuspenseWrapper>} />
           <Route path="proveedores" element={<SuspenseWrapper><SupplierListPage /></SuspenseWrapper>} />

@@ -121,4 +121,6 @@ export const personalApi = {
     apiClient.post(`/personal/${id}/reset-password`, { password, password_confirmation: passwordConfirmation }),
   rolesDisponibles: () => apiClient.get('/personal/roles-disponibles'),
   permisosAgrupados: () => apiClient.get('/personal/permisos-agrupados'),
+  reportePersonalActivo: () => apiClient.get('/personal/reportes/personal-activo', { responseType: 'blob' }),
+  reporteFichaPersonal: (id: number) => apiClient.get(`/personal/reportes/ficha-personal?pid=${id}`, { responseType: 'blob' }),
 };

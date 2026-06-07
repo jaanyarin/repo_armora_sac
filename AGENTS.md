@@ -18,7 +18,7 @@
 
 ## Estado actual del proyecto
 
-**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) en validación + Hito 004a Company Settings implementado + Hito 007 Personal cerrado + iteración feedback Hito 007 aplicada** — Sales + Inventory + **Purchases** completo (backend) + **Company** (backend + frontend) + **Personal** (backend + frontend "Crear" + iteración ficha) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B + 4 fixes Personal + 3 migraciones + 6 cambios de feedback.
+**Hito 003 cerrado + Fase 0 auditoría cerrada + Hito 004 Purchases (Ola A+B) en validación + Hito 004a Company Settings implementado + Hito 007 Personal cerrado + iteración feedback Hito 007 aplicada + Gestión Personal + Reportes Personal** — Sales + Inventory + **Purchases** completo (backend) + **Company** (backend + frontend) + **Personal** (backend + frontend CRUD completo + iteración ficha + reportes) + 11 fixes auditoría (A-01 a A-11) + 14 fixes Ola B + 4 fixes Personal + 3 migraciones + 6 cambios de feedback + 5 tests reportes.
 Módulos funcionales: Auth, Catalog, Customers, Products, **Sales, Inventory, Purchases, Company, Personal**.
 Portal Cliente: catálogo público + login + dashboard + **pedidos (carrito + checkout + historial)** con navegación responsive.
 
@@ -285,15 +285,15 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 - ✅ Migración `2026_06_07_010002` elimina `dni`/`ruc`/`documento_tipo_id` de `users` y agrega `documento_identidad_id` FK a `dim_documento_identidad`
 - ✅ `User::factory()` y `AuthService::login` actualizados (login multi-campo usa `numero_documento` en vez de `dni`/`ruc`)
 - ✅ PersonalTest pasa **23/23** (75 assertions); suite completa no pre-existente: 67/67 passing (Personal 23 + Inventory 4 + Sales 18 + Purchases 19 + Company 3)
-- ⏳ `PersonalListPage` (DataGrid) pendiente
-- ⏳ `Gestión Personal` y `Reportes Personal` del sidebar como ComingSoon
+- ✅ `PersonalListPage` (DataGrid) implementado (2026-06-07)
+- ✅ `Reportes Personal` implementado (2 cards: Personal Activo + Ficha Personal, HTML printable con `window.print()`) (2026-06-07)
 
 ### Hito 005 — Logistics + Loyalty
 - Rutas, zonas, transportistas
 - Programa de canje y premios
 - Frontend Admin Purchases completo
 - Inventory Admin completo (stock + kardex)
-- PersonalListPage (DataGrid) + Gestión Personal completa
+- PersonalListPage (DataGrid) + Gestión Personal completa + **Reportes Personal** (2 cards: Personal Activo + Ficha Personal) ✅
 
 ### Hito 006 — Cross-cutting
 - CI/CD (GitHub Actions)

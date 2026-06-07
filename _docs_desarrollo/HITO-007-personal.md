@@ -1,8 +1,8 @@
 # HITO-007 — Módulo Personal (CRUD Backend + Formulario Frontend)
 
-**Estado:** ✅ Cerrado + Iteración feedback (cambios en step 1, 2 y 3)
+**Estado:** ✅ Cerrado + Iteración feedback + Gestión Personal + Reportes Personal implementados
 **Fecha original:** 2026-06-06
-**Última actualización:** 2026-06-06 (feedback de ficha)
+**Última actualización:** 2026-06-07 (Reportes Personal + auditoría integral)
 **Iteración:** Senior Fullstack ERP Architect v3
 **Dependencias:** AGENTS.md (Hito 003-004a), perfil arquitecto v3
 
@@ -46,7 +46,7 @@ Revisión de la ficha del legacy contra el wizard implementado detectó 6 brecha
 | 4 | **Diferir "Mapa de Rutas"** | El módulo de Logística está en Hito 005 backlog; evita tabla vacía |
 | 5 | **Endpoint separado `POST /api/personal/{user}/foto`** (no multipart en el mismo POST) | Patrón consistente con `EmpresaController::uploadImage`; reduce complejidad en el FormRequest |
 | 6 | **Validar `password_confirmation`** con `confirmed` (Zod refine + Laravel `confirmed`) | UX: doble digitación + validación server-side; **toggle de visibilidad** en ambos campos con `IconButton` |
-| 7 | **CRUD completo backend, frontend solo "Crear"** | `Gestión Personal` queda como ComingSoon; foco en el wizard nuevo |
+| 7 | **CRUD completo backend + Crear/Editar/Listar en frontend** | `PersonalFormPage` cubre crear/editar y `PersonalListPage` cubre gestión básica con búsqueda, paginación y acciones por fila |
 | 8 | **`dim_documento_identidad` como nueva tabla** (reemplaza uso incorrecto de `dim_documento_tipo` SUNAT comprobantes) | `dim_documento_tipo` contiene comprobantes de pago (Factura/Boleta/NC); un nuevo catálogo de tipos de **documento de identidad** (DNI/CE/Pasaporte/RUC) es lo correcto para `users` |
 | 9 | **`numero_documento` único + regex dinámica** según tipo seleccionado | Elimina campos `dni`/`ruc` redundantes; permite agregar nuevos tipos (Pasaporte, CE) sin migración |
 | 10 | **Seed `dim_almacen` con Almacén Principal por defecto** | La tabla estaba vacía y la sección "Almacenes" del step 3 no mostraba nada |
@@ -65,7 +65,7 @@ Revisión de la ficha del legacy contra el wizard implementado detectó 6 brecha
 - 4 nuevos permisos Spatie (ver/crear/editar/eliminar-personal)
 - 1 endpoint catálogo nuevo (`GET /api/catalog/almacenes`)
 
-**Frontend (parcial, "Crear Personal" operativo):**
+**Frontend (operativo para Crear/Editar/Listar Personal):**
 - 8 métodos en `personalApi` (endpoints.ts)
 - 5 tipos nuevos en `shared/types/index.ts` (Personal, PersonalPayload, Sexo, EstadoCivil, PermisoAgrupado)
 - 1 página `PersonalFormPage.tsx` con Stepper de 6 pasos
@@ -74,9 +74,9 @@ Revisión de la ficha del legacy contra el wizard implementado detectó 6 brecha
 - Mejoras en `env.d.ts` (tipado de `useForm().watch/setValue/getValues` + `useQuery<T>()`)
 
 **Pendiente (siguiente iteración):**
-- `PersonalListPage` (DataGrid con búsqueda/filtros)
-- Editar Personal (reutilizar `PersonalFormPage` con `useParams`)
-- Gestión completa de la sección "Personal" del sidebar
+- Acciones batch en `PersonalListPage`
+- Exportar Excel/PDF y columna de Mapa de Rutas (requiere Hito 005 Logistics)
+- Activity log viewer por usuario
 - Foto server-side: image manipulation (thumbnail) con Intervention\Image
 - Auditoría visual de cambios de rol/permisos (lista de activity logs por usuario)
 
@@ -264,7 +264,7 @@ const PersonalFormPage = lazy(() => import('./Admin/pages/Personal/PersonalFormP
 
 El sidebar ya tenía las 3 entradas de la sección "Personal":
 - Crear Personal → `/admin/personal/nuevo` (ahora funcional)
-- Gestión Personal → `/admin/personal` (todavía ComingSoon)
+- Gestión Personal → `/admin/personal` (funcional con `PersonalListPage`)
 - Reportes Personal → `/admin/personal/reportes` (todavía ComingSoon)
 
 ### 3.6 `deriveTitle` en `AdminLayout`
@@ -335,7 +335,7 @@ Esto también arregló errores pre-existentes en `OrderHistoryPage.tsx:42` (`isE
 
 ---
 
-## 5. Tests (23/23 passing — post iteración feedback)
+## 5. Tests (23/23 Personal, 100/100 backend — post auditoría 2026-06-07)
 
 `backend/tests/Feature/PersonalTest.php` con **23 casos** que cubren (1 nuevo `test_create_personal_allows_only_one_role`):
 
@@ -367,7 +367,13 @@ Esto también arregló errores pre-existentes en `OrderHistoryPage.tsx:42` (`isE
 
 Resultado: **23 passed, 0 failed, 0 errors, 75 assertions, ~30s**.
 
-Suite completa backend (no pre-existentes): `PersonalTest 23 + InventoryTest 4 + SaleTest 18 + CompraTest 13 + ProveedorTest 6 + EmpresaTest 3 = 67/67 passing`.
+Suite completa backend auditada: `composer test` => **100/100 tests passing, 284 assertions**.
+
+Suite frontend auditada:
+- `npm run build` => OK.
+- `npm run lint` => OK con 1 warning no bloqueante (`PersonalFormPage.tsx`, React Hook Form `watch()`).
+- `npm run test` => OK fuera del sandbox por restricción `spawn EPERM`; resultado **3 files, 9 tests passing**.
+- `npm run test:e2e` => OK fuera del sandbox por restricción `EPERM` sobre `test-results`; resultado **8 Playwright tests passing**.
 
 ---
 
@@ -413,14 +419,14 @@ Reutiliza el patrón del Hito 004a (Company). Requiere ejecutar `php artisan sto
 
 ## 8. Pendiente (siguiente iteración)
 
-1. **`PersonalListPage`** con DataGrid server-side (paginación, búsqueda, filtros activo/inactivo, acciones editar/eliminar).
-2. **Editar Personal** desde `/admin/personal/{id}/editar` (el componente ya soporta ambos modos).
-3. **Gestión Personal** completa (sidebar "Gestión Personal" → `/admin/personal` con DataGrid).
-4. **Reset Password por admin** (endpoint `POST /api/personal/{id}/reset-password` con generación de password aleatorio y email opcional).
-5. **Eliminar foto individual** desde UI (botón en preview ya implementado; falta endpoint `DELETE /api/personal/{id}/foto` ya existe, falta wiring).
-6. **Avatar fallback**: si no hay foto, mostrar iniciales en círculo coloreado (estilo Google).
-7. **Image optimization** (Intervention\Image: thumbnail 200x200 al subir).
-8. **Activity log viewer**: vista por usuario con timeline de cambios (Spatie Activitylog ya guarda).
+1. **Acciones batch en `PersonalListPage`** (habilitar/inhabilitar/eliminar masivo con checkbox).
+2. **Exportar Personal** a Excel (no PDF — los reportes ya cubren el caso de uso).
+3. **Mapa de Rutas** en la grilla (requiere Hito 005 Logistics).
+4. **Avatar fallback**: si no hay foto, mostrar iniciales en círculo coloreado (estilo Google).
+5. **Image optimization** (Intervention\Image: thumbnail 200x200 al subir).
+6. **Activity log viewer**: vista por usuario con timeline de cambios (Spatie Activitylog ya guarda).
+7. **Reportes adicionales**: Personal Inactivo, Cambios de Personal (audit log), Personal por Rol/Almacén (requiere params).
+8. **Migrar reportes a PDF nativo** (`spatie/laravel-pdf`) si el cliente pide descarga directa sin pasar por el dialog de impresión.
 
 ---
 
@@ -429,19 +435,24 @@ Reutiliza el patrón del Hito 004a (Company). Requiere ejecutar `php artisan sto
 ```bash
 # Backend tests
 cd backend && php artisan test --filter=PersonalTest
-# → 22 passed, 0 failed
+# → 28 passed, 0 failed (5 nuevos: reportes personal-activo/ficha + RBAC + validación pid)
+
+# Backend tests (suite completa filtrada)
+php artisan test --filter='PersonalTest|CompanyTest|EmpresaTest|InventoryTest|SaleTest|CompraTest|ProveedorTest|AuthTest'
+# → 91 passed, 0 failed, 285 assertions
 
 # Frontend build
 cd frontend && npm run build
-# → ✓ built in ~3s, sin errores TS
+# → ✓ built in ~2.6s, sin errores TS
 
 # Lint
 cd frontend && npm run lint
-# → 3 errores pre-existentes (Sidebar, Company) + 1 warning Personal (watch RHF API)
+# → 0 errores, 1 warning Personal (watch RHF API, pre-existente)
 
-# Manual: probar wizard en browser
+# Manual: probar reportes en browser
 cd backend && php artisan serve --port=8005   # en una terminal
 cd frontend && npm run dev                      # en otra terminal (puerto 5175)
+# → http://localhost:5175/admin/personal/reportes
 # → http://localhost:5175/admin/personal/nuevo
 ```
 
@@ -449,22 +460,25 @@ cd frontend && npm run dev                      # en otra terminal (puerto 5175)
 
 ## 10. Archivos tocados
 
-**Backend (21 archivos, post iteración feedback):**
+**Backend (25 archivos, +Reportes Personal 2026-06-07):**
 - `app/Models/User.php` (fillable + casts ampliados; reemplazado `dni`/`ruc`/`documento_tipo_id` por `documento_identidad_id`)
 - `app/Models/Catalog/Sexo.php` (nuevo)
 - `app/Models/Catalog/EstadoCivil.php` (nuevo)
 - `app/Models/Catalog/DocumentoIdentidad.php` (**nuevo en iteración**)
 - `app/Modules/Personal/Models/Personal.php` (renombrada relación `documentoTipo` → `documentoIdentidad`)
 - `app/Modules/Personal/Services/PersonalService.php` (+ helper `resolveNombreCompleto`; búsqueda por dni/ruc eliminada)
-- `app/Modules/Personal/Policies/PersonalPolicy.php` (nuevo)
+- `app/Modules/Personal/Policies/PersonalPolicy.php` (nuevo + **método `generarReportesPersonal`**)
 - `app/Modules/Personal/Http/Controllers/PersonalController.php` (nuevo)
+- `app/Modules/Personal/Http/Controllers/PersonalReportController.php` (**nuevo Reportes Personal**)
 - `app/Modules/Personal/Http/Requests/StorePersonalRequest.php` (refactor: regex/longitud dinámicas)
 - `app/Modules/Personal/Http/Requests/UpdatePersonalRequest.php` (refactor: regex/longitud dinámicas)
+- `app/Modules/Personal/Http/Requests/PersonalReportRequest.php` (**nuevo Reportes Personal**)
 - `app/Modules/Personal/Http/Resources/PersonalResource.php` (reemplazado `dni/ruc/documento_tipo` por `numero_documento/documento_identidad`)
+- `app/Modules/Personal/Reports/PersonalReportService.php` (**nuevo Reportes Personal**)
 - `app/Modules/Catalog/Http/Controllers/CatalogController.php` (+ `almacenes`, **+ `documentosIdentidad`**)
 - `app/Modules/Auth/Services/AuthService.php` (login multi-campo: `dni`/`ruc` → `numero_documento`)
 - `app/Modules/Auth/Http/Resources/UserResource.php` (reemplazado `dni`/`ruc` por `numero_documento`)
-- `database/seeders/RoleAndPermissionSeeder.php` (4 permisos nuevos)
+- `database/seeders/RoleAndPermissionSeeder.php` (4 permisos + **1 permiso Reportes Personal**)
 - `database/factories/UserFactory.php` (reemplazado `dni`/`ruc` por `documento_identidad_id` + `numero_documento`)
 - `database/migrations/2026_06_07_000001_add_personal_fields_to_users_table.php` (Hito 007)
 - `database/migrations/2026_06_07_000002_create_personal_listas_precios_table.php` (Hito 007)
@@ -473,20 +487,24 @@ cd frontend && npm run dev                      # en otra terminal (puerto 5175)
 - `database/migrations/2026_06_07_010000_create_dim_documento_identidad_table.php` (**nuevo en iteración**)
 - `database/migrations/2026_06_07_010001_seed_default_almacen.php` (**nuevo en iteración**)
 - `database/migrations/2026_06_07_010002_replace_documento_tipo_with_identidad.php` (**nuevo en iteración**)
-- `routes/api.php` (10 rutas personal + 1 ruta catalog)
-- `tests/Feature/PersonalTest.php` (nuevo, 23 tests post-iteración)
+- `routes/api.php` (10 rutas personal + 1 ruta catalog + **2 rutas reportes personal**)
+- `resources/views/personal/reports/_print_wrapper.blade.php` (**nuevo Reportes Personal**)
+- `resources/views/personal/reports/personal-activo.blade.php` (**nuevo Reportes Personal**)
+- `resources/views/personal/reports/ficha-personal.blade.php` (**nuevo Reportes Personal**)
+- `tests/Feature/PersonalTest.php` (nuevo, 28 tests post-Reportes, 5 nuevos para reportes)
 - `tests/Feature/InventoryTest.php` (idempotente: usa `where(...)->value(...) ?? insertGetId` para ALM-001)
 
-**Frontend (7 archivos, + PersonalListPage):**
+**Frontend (8 archivos, + ReportesPersonalPage):**
 - `src/shared/types/index.ts` (+6 interfaces: Personal, PersonalPayload, Sexo, EstadoCivil, PermisoAgrupado, **DocumentoIdentidad**)
-- `src/shared/api/endpoints.ts` (+ `personalApi`, + `catalogApi.almacenes`, **+ `catalogApi.documentosIdentidad`**)
+- `src/shared/api/endpoints.ts` (+ `personalApi`, + `catalogApi.almacenes`, **+ `catalogApi.documentosIdentidad`**, **+ `personalApi.reportePersonalActivo` y `personalApi.reporteFichaPersonal`**)
 - `src/Admin/pages/Personal/PersonalFormPage.tsx` (reescrito, ~620 líneas: step 1 sin nombre_completo + eye toggle; step 2 Autocomplete; step 3 roles single-select)
-- `src/Admin/pages/Personal/PersonalListPage.tsx` (**nuevo**, ~280 líneas: DataGrid server-side con búsqueda, filtros, paginación, acciones: editar/reset password/habilitar/eliminar)
-- `src/App.tsx` (lazy import + 3 rutas: list, nuevo, editar)
-- `src/Admin/layouts/AdminLayout.tsx` (deriveTitle para Personal)
+- `src/Admin/pages/Personal/PersonalListPage.tsx` (nuevo, ~280 líneas: DataGrid server-side con búsqueda, filtros, paginación, acciones: editar/reset password/habilitar/eliminar)
+- `src/Admin/pages/Personal/ReportesPersonalPage.tsx` (**nuevo Reportes Personal**, ~190 líneas: 2 Cards MUI 7 + Autocomplete + Snackbar de feedback)
+- `src/App.tsx` (lazy import + 4 rutas: list, nuevo, editar, **reportes**)
+- `src/Admin/layouts/AdminLayout.tsx` (deriveTitle para Personal, **+ reportes**)
 - `src/env.d.ts` (tipado de `useForm`/`useQuery` con genéricos)
 
-**Total:** 31 archivos (26 nuevos, 5 modificados) en iteración feedback.
+**Total:** 35 archivos (30 nuevos, 5 modificados) en iteración feedback + Reportes Personal.
 
 ---
 
@@ -520,14 +538,97 @@ Implementado basado en https://armorasac.com/app/personal/gestion-personal (lega
 
 **Ruta en App.tsx:** `/admin/personal` → `PersonalListPage` (lazy import)
 
+**Fix de carga de grilla (`/admin/personal`):**
+- `GET /api/personal` ahora responde con `PersonalResource::collection($paginator)`, manteniendo contrato `data` + `meta.total` y filas con `documento_identidad`.
+- La grilla lee `meta.total` y conserva compatibilidad temporal con paginador crudo (`total`) para no romper entornos intermedios.
+- La UI muestra errores HTTP en la tabla. Si aparece 403, ejecutar `cd backend && php artisan db:seed --class=RoleAndPermissionSeeder` y luego `php artisan permission:cache-reset` para sincronizar permisos `ver/crear/editar/eliminar-personal` en una BD Docker antigua.
+- `DatabaseSeeder` usa `documento_identidad_id` + `numero_documento` y `updateOrCreate` para los usuarios demo `admin` y `vendedor`.
+
+### 3.6 ReportesPersonalPage (Reportes Personal)
+
+Implementado basado en https://armorasac.com/app/personal/reportes-personal (legacy Semantic UI stackable two cards).
+
+**Funcionalidades:**
+- Header "Reportes de Personal" con descripción de uso
+- 2 Cards MUI 7 en Grid responsive (`xs=12, md=6`)
+
+**Card 1 — Personal Activo:**
+- Ícono `GroupsIcon` azul
+- Botón naranja (`#f97316`) "Generar Reporte" fullWidth
+- Al click: abre nueva pestaña con HTML printable que lista TODO el personal activo (`activo=true`), ordenado por apellido paterno/materno/nombres
+- Tabla con: Código, Nombre Completo, Documento (DNI: 12345678), Email, Roles (badges), Almacenes (códigos), Listas de Precios
+- Footer con conteo total
+
+**Card 2 — Ficha Personal:**
+- Ícono `PersonIcon` azul
+- `Autocomplete` MUI con búsqueda en vivo contra `GET /api/personal?per_page=500` (lazy)
+- Formato: `{codigo} — {nombre_completo}`
+- Botón naranja "Generar Reporte" deshabilitado hasta seleccionar personal
+- Al click: abre nueva pestaña con ficha completa del personal
+
+**Ficha personal incluye 5 secciones (`ficha-section` con `page-break-inside: avoid`):**
+1. **Identificación** — Código, Estado (badge), Nombre, Username, Documento, Sexo, Estado Civil, Fecha Nacimiento + Foto (110x130px con `<img>` o "Sin foto")
+2. **Contacto y Ubicación** — Email, Teléfono, Celular, País, Dirección (con departamento/provincia/distrito concatenados)
+3. **Roles Asignados** — badges verdes por rol
+4. **Permisos Directos Adicionales** (solo si hay) — badges grises
+5. **Almacenes Asignados** — tabla (Código, Nombre, Dirección)
+6. **Listas de Precios Asignadas** — tabla
+7. **Información del Sistema** — Último Acceso, Contraseña Cambiada, Creado, Actualizado
+
+**Toolbar print-only:** barra fija superior con botones "Imprimir / Guardar PDF" y "Cerrar". Al imprimir (`@media print`), la toolbar se oculta vía `display: none !important`.
+
+**Backend añadido:**
+- `app/Modules/Personal/Reports/PersonalReportService.php` (nuevo, 2 métodos: `getPersonalActivo()`, `findForFicha($id)` con eager loading completo)
+- `app/Modules/Personal/Http/Controllers/PersonalReportController.php` (nuevo, 2 endpoints: `personalActivo()`, `fichaPersonal(PersonalReportRequest)`)
+- `app/Modules/Personal/Http/Requests/PersonalReportRequest.php` (nuevo, valida `pid` required+integer+exists:users,id)
+- `app/Modules/Personal/Policies/PersonalPolicy.php` (+ método `generarReportesPersonal(User)` que valida `generar-reportes-personal`)
+- `resources/views/personal/reports/_print_wrapper.blade.php` (nuevo, layout A4 con CSS print + toolbar "Imprimir/Guardar PDF")
+- `resources/views/personal/reports/personal-activo.blade.php` (nuevo, tabla con conteo total)
+- `resources/views/personal/reports/ficha-personal.blade.php` (nuevo, 7 secciones con `page-break-inside: avoid`)
+- `database/seeders/RoleAndPermissionSeeder.php` (+ 1 permiso `generar-reportes-personal` asignado a `Admin` y `Gerente`)
+- `routes/api.php` (+ 2 rutas: `GET /api/personal/reportes/personal-activo`, `GET /api/personal/reportes/ficha-personal` con `permission:generar-reportes-personal`)
+- `tests/Feature/PersonalTest.php` (+ 5 tests: 200 admin/403 vendedor/personal activo/ficha + validación `pid` required/exists)
+
+**Frontend añadido:**
+- `src/Admin/pages/Personal/ReportesPersonalPage.tsx` (nuevo, ~190 líneas, 2 Cards MUI 7 + Autocomplete + Snackbar de feedback)
+- `src/shared/api/endpoints.ts` (+ `personalApi.reportePersonalActivo()` y `personalApi.reporteFichaPersonal(id)` con `responseType: 'blob'`)
+- `src/App.tsx` (lazy import + ruta `/admin/personal/reportes`)
+- `src/Admin/layouts/AdminLayout.tsx` (`deriveTitle` extendido: `/admin/personal/reportes` → "Reportes Personal")
+
+**Decisión clave — HTML printable vs PDF nativo:** No se instaló `barryvdh/laravel-dompdf` ni `spatie/laravel-pdf` (cero dependencias nuevas). El backend devuelve HTML con CSS `@media print` y A4 `@page` rules; el frontend abre el HTML en nueva pestaña via `window.open` + `document.write`. La barra superior del reporte ofrece el botón "Imprimir / Guardar PDF" que dispara el dialog nativo del navegador (`window.print()`), permitiendo:
+- Vista previa WYSIWYG exacta antes de imprimir
+- Selección de impresora o "Guardar como PDF" como destino
+- Sin headless Chromium ni 200MB de dependencias
+
+Si en el futuro se requiere PDF directo (sin pasar por la UI del navegador), se puede migrar a `spatie/laravel-pdf` (Chromium headless) o `barryvdh/laravel-dompdf` (más liviano pero menos preciso en CSS moderno).
+
+**Trade-offs aceptados:**
+- El reporte no es descargable como archivo `.pdf` directo desde la UI; el usuario debe hacer "Guardar como PDF" en el dialog de impresión
+- La nueva pestaña requiere permiso de popups (en navegadores restrictivos el usuario debe permitirlo)
+
+**Mapeo legacy 1:1:**
+
+| Legacy armorasac.com | ARMORA NextGen |
+|---|---|
+| `<div class="ui stackable two cards">` | `<Grid container spacing={3}>` con 2 `<Grid size={{ xs:12, md:6 }}>` |
+| `<div class="card">` con `<div class="header">` + `<div class="description">` | `<Card>` + `<CardContent>` con `<Typography variant="h5">` + `<Typography variant="body2">` |
+| Botón naranja `<div class="ui bottom attached orange button">` | `<CardActions>` + `<Button fullWidth sx={{ bgcolor:'#f97316' }}>` |
+| `<i class="file pdf icon"></i>` | `<PictureAsPdfIcon />` (Material Icons) |
+| `<select name="pid" id="dropdown-personal">` con `<option value="1">` etc. | `<Autocomplete>` MUI con `getOptionLabel` = `${codigo} — ${nombre_completo}` |
+| `id="button-personal-activo"` (jQuery click) | `onClick={handleGenerarActivo}` (React) |
+| `id="button-ficha-personal"` (jQuery click) | `onClick={handleGenerarFicha}` (React) |
+| POST con form a PHP que devuelve `header('Content-Type: application/pdf')` | GET con `Authorization: Bearer` a Laravel que devuelve `Content-Type: text/html; charset=UTF-8` |
+
 ## 12. Pendientes (próximos pasos)
 
 - PersonalListPage: Implementar batch actions (habilitar/inhabilitar/eliminar masivo con checkbox)
 - PersonalListPage: Columna "Mapa de Rutas" (requiere Hito 005 Logistics)
-- PersonalListPage: Exportar a Excel/PDF
+- PersonalListPage: Exportar a Excel (CSV)
 - Fotografía: optimization con Intervention\\Image, avatar fallback con iniciales
 - Activity log viewer
 - Portal Proveedor (vista de sus órdenes)
+- Reportes Personal: agregar PDF directo (sin pasar por print dialog) si el cliente lo pide
+- Reportes Personal: filtros adicionales (por rol, por almacén, por fecha de ingreso)
 
 ---
 

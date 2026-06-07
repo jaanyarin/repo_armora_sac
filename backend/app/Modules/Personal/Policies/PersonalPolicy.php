@@ -34,4 +34,9 @@ class PersonalPolicy
         }
         return $user->can('eliminar-personal');
     }
+
+    public function generarReportesPersonal(User $user): bool
+    {
+        return $user->can('generar-reportes-personal');
+    }
 }

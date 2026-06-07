@@ -52,7 +52,11 @@ class PersonalTest extends TestCase
     public function test_admin_can_list_personal(): void
     {
         $response = $this->withToken($this->adminToken)->getJson('/api/personal');
-        $response->assertOk();
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data',
+                'meta' => ['total'],
+            ]);
     }
 
     public function test_vendedor_cannot_list_personal(): void
@@ -316,7 +320,12 @@ class PersonalTest extends TestCase
 
         $response = $this->withToken($this->adminToken)->getJson('/api/personal?search=buscable');
         $response->assertOk()
-            ->assertJsonPath('data.0.username', 'buscable');
+            ->assertJsonPath('data.0.username', 'buscable')
+            ->assertJsonPath('data.0.documento_identidad.codigo', 'DNI')
+            ->assertJsonStructure([
+                'data',
+                'meta' => ['total'],
+            ]);
     }
 
     public function test_create_personal_allows_only_one_role(): void
@@ -327,5 +336,67 @@ class PersonalTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['roles']);
+    }
+
+    public function test_admin_can_generate_personal_activo_report(): void
+    {
+        $this->withToken($this->adminToken)->postJson('/api/personal', $this->payload([
+            'username' => 'jperez1',
+            'apellido_paterno' => 'Activo',
+            'apellido_materno' => 'Test',
+            'nombres' => 'Personal',
+            'email' => 'activo@test.com',
+            'numero_documento' => '11111111',
+        ]))->assertCreated();
+
+        $response = $this->withToken($this->adminToken)->get('/api/personal/reportes/personal-activo');
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'text/html; charset=UTF-8')
+            ->assertSee('Reporte de Personal Activo')
+            ->assertSee('Activo Test Personal')
+            ->assertSee('activo@test.com')
+            ->assertSee('DNI: 11111111');
+    }
+
+    public function test_vendedor_cannot_generate_personal_activo_report(): void
+    {
+        $response = $this->withToken($this->vendedorToken)->get('/api/personal/reportes/personal-activo');
+        $response->assertForbidden();
+    }
+
+    public function test_admin_can_generate_ficha_personal_report(): void
+    {
+        $created = $this->withToken($this->adminToken)->postJson('/api/personal', $this->payload([
+            'username' => 'jperez2',
+            'apellido_paterno' => 'Ficha',
+            'apellido_materno' => 'Test',
+            'nombres' => 'Personal',
+            'email' => 'ficha@test.com',
+            'numero_documento' => '22222222',
+        ]))->assertCreated();
+
+        $id = $created->json('data.id');
+
+        $response = $this->withToken($this->adminToken)->get("/api/personal/reportes/ficha-personal?pid={$id}");
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'text/html; charset=UTF-8')
+            ->assertSee('Ficha de Personal')
+            ->assertSee('Ficha Test Personal')
+            ->assertSee('ficha@test.com')
+            ->assertSee('22222222');
+    }
+
+    public function test_ficha_personal_report_validates_pid_required(): void
+    {
+        $response = $this->withToken($this->adminToken)->get('/api/personal/reportes/ficha-personal');
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['pid']);
+    }
+
+    public function test_ficha_personal_report_validates_pid_exists(): void
+    {
+        $response = $this->withToken($this->adminToken)->get('/api/personal/reportes/ficha-personal?pid=99999');
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['pid']);
     }
 }

@@ -47,6 +47,7 @@ function deriveTitle(pathname: string): string {
     return 'Proveedores';
   }
   if (pathname.startsWith('/admin/personal')) {
+    if (pathname.includes('/reportes')) return 'Reportes Personal';
     if (pathname.includes('/nuevo')) return 'Nuevo Personal';
     if (pathname.includes('/editar')) return 'Editar Personal';
     return 'Personal';

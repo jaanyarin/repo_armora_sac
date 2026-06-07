@@ -117,5 +117,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('{personal}/toggle-activo', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'toggleActivo'])->middleware('permission:editar-personal');
         Route::post('{personal}/reset-password', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'resetPassword'])->middleware('permission:editar-personal');
         Route::delete('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'destroy'])->middleware('permission:eliminar-personal');
+
+        Route::prefix('reportes')->group(function () {
+            Route::get('personal-activo', [\App\Modules\Personal\Http\Controllers\PersonalReportController::class, 'personalActivo'])->middleware('permission:generar-reportes-personal');
+            Route::get('ficha-personal', [\App\Modules\Personal\Http\Controllers\PersonalReportController::class, 'fichaPersonal'])->middleware('permission:generar-reportes-personal');
+        });
     });
 });
