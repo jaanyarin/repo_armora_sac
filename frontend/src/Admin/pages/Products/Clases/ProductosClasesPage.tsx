@@ -4,7 +4,10 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Alert, InputAdornment,
   Menu, MenuItem, ListItemIcon, ListItemText, Paper, Switch, FormControlLabel,
   Skeleton, Divider, Stack, Card, CardContent, CardActionArea, Grid,
+  Autocomplete,
 } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -98,13 +101,38 @@ export default function ProductosClasesPage() {
   const clases: ProductoClase[] = clasesData?.data ?? [];
   const selectedClase: ProductoClase | null = clases.find((c) => c.id === selectedClaseId) || null;
 
+  const [subclaseSearch, setSubclaseSearch] = useState('');
+  const [subclasePaginationModel, setSubclasePaginationModel] = useState({ page: 0, pageSize: 15 });
+
+  const handleSelectClaseForGrid = useCallback((id: string) => {
+    setSelectedClaseId(id);
+    setSubclasePaginationModel((m) => ({ ...m, page: 0 }));
+    setSubclaseSearch('');
+  }, []);
+
+  const handleSubclaseSearchChange = useCallback((value: string) => {
+    setSubclaseSearch(value);
+    setSubclasePaginationModel((m) => ({ ...m, page: 0 }));
+  }, []);
+
   const { data: subclasesData, isLoading: loadingSubclases } = useQuery({
-    queryKey: ['producto-subclases', { clase_id: selectedClaseId, per_page: 100 }],
-    queryFn: () => productoSubclasesApi.list({ clase_id: selectedClaseId as string, per_page: 100 }).then((r) => r.data),
+    queryKey: ['producto-subclases', {
+      clase_id: selectedClaseId,
+      search: subclaseSearch,
+      page: subclasePaginationModel.page + 1,
+      per_page: subclasePaginationModel.pageSize,
+    }],
+    queryFn: () => productoSubclasesApi.list({
+      clase_id: selectedClaseId as string,
+      ...(subclaseSearch ? { search: subclaseSearch } : {}),
+      page: subclasePaginationModel.page + 1,
+      per_page: subclasePaginationModel.pageSize,
+    }).then((r) => r.data),
     enabled: !!selectedClaseId,
   });
 
   const subclases: ProductoSubclase[] = subclasesData?.data ?? [];
+  const subclasesTotal: number = subclasesData?.total ?? 0;
 
   const invalidateClases = () => {
     queryClient.invalidateQueries({ queryKey: ['producto-clases'] });
@@ -174,20 +202,59 @@ export default function ProductosClasesPage() {
     },
   });
 
-  const handleSelectClase = (id: string) => setSelectedClaseId(id);
-  const handleClearClase = () => setSelectedClaseId(null);
+  const handleSelectClase = handleSelectClaseForGrid;
+  const handleClearClase = useCallback(() => {
+    setSelectedClaseId(null);
+    setSubclasePaginationModel((m) => ({ ...m, page: 0 }));
+    setSubclaseSearch('');
+  }, []);
 
-  const openClaseMenu = (e: React.MouseEvent<HTMLElement>, row: ProductoClase) => {
+  const openClaseMenu = useCallback((e: React.MouseEvent<HTMLElement>, row: ProductoClase) => {
     e.stopPropagation();
     setClaseMenu({ anchorEl: e.currentTarget, row });
-  };
-  const closeClaseMenu = () => setClaseMenu({ anchorEl: null, row: null });
+  }, []);
+  const closeClaseMenu = useCallback(() => setClaseMenu({ anchorEl: null, row: null }), []);
 
-  const openSubclaseMenu = (e: React.MouseEvent<HTMLElement>, row: ProductoSubclase) => {
+  const openSubclaseMenu = useCallback((e: React.MouseEvent<HTMLElement>, row: ProductoSubclase) => {
     e.stopPropagation();
     setSubclaseMenu({ anchorEl: e.currentTarget, row });
-  };
-  const closeSubclaseMenu = () => setSubclaseMenu({ anchorEl: null, row: null });
+  }, []);
+  const closeSubclaseMenu = useCallback(() => setSubclaseMenu({ anchorEl: null, row: null }), []);
+
+  const subclaseColumns: GridColDef<ProductoSubclase>[] = useMemo(() => [
+    { field: 'codigo', headerName: 'Código', width: 130, renderCell: (p: GridRenderCellParams<ProductoSubclase>) => (
+        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{p.value || '—'}</Typography>
+      )
+    },
+    { field: 'nombre', headerName: 'Nombre', flex: 1, minWidth: 200 },
+    {
+      field: 'descripcion', headerName: 'Descripción', flex: 1.2, minWidth: 180,
+      renderCell: (p: GridRenderCellParams<ProductoSubclase>) => (
+        <Typography variant="body2" color="text.secondary" noWrap title={p.value || ''}>
+          {p.value || '—'}
+        </Typography>
+      ),
+    },
+    { field: 'orden', headerName: 'Orden', width: 90, type: 'number' },
+    {
+      field: 'activo', headerName: 'Estado', width: 110,
+      renderCell: (p: GridRenderCellParams<ProductoSubclase>) => (
+        <Chip
+          size="small"
+          label={p.value ? 'Activo' : 'Inactivo'}
+          color={p.value ? 'success' : 'default'}
+        />
+      ),
+    },
+    {
+      field: 'acciones', headerName: '', width: 80, sortable: false, filterable: false, disableColumnMenu: true,
+      renderCell: (p: GridRenderCellParams<ProductoSubclase>) => (
+        <IconButton size="small" onClick={(e) => openSubclaseMenu(e, p.row)}>
+          <MoreVertIcon fontSize="small" />
+        </IconButton>
+      ),
+    },
+  ], [openSubclaseMenu]);
 
   return (
     <Box>
@@ -197,16 +264,28 @@ export default function ProductosClasesPage() {
             Gestión de Clases y Subclases
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Organiza tu catálogo por líneas y subcategorías. Selecciona una clase para ver y editar sus subclases.
+            Organiza tu catálogo por líneas y subcategorías. Crea clases y agrúpalas con sus subclases desde aquí.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setClaseDialog({ open: true, clase: null })}
-        >
-          Nueva Clase
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={<AddIcon />}
+            onClick={() => setSubclaseDialog({ open: true, claseId: '', subclase: null })}
+            disabled={loadingClases || clases.length === 0}
+            title={clases.length === 0 ? 'Crea primero una clase' : 'Crear una nueva subclase'}
+          >
+            Nueva Subclase
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setClaseDialog({ open: true, clase: null })}
+          >
+            Nueva Clase
+          </Button>
+        </Box>
       </Box>
 
       <Paper sx={{ p: 2, mb: 2 }}>
@@ -356,39 +435,74 @@ export default function ProductosClasesPage() {
                   Nueva Subclase
                 </Button>
               </Box>
+              <Box sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
+                <TextField
+                  size="small"
+                  placeholder="Buscar subclase..."
+                  value={subclaseSearch}
+                  onChange={(e) => handleSubclaseSearchChange(e.target.value)}
+                  sx={{ flex: 1, minWidth: 180 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: subclaseSearch ? (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => handleSubclaseSearchChange('')}>
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
+                  }}
+                />
+              </Box>
               <Divider sx={{ mb: 1 }} />
 
-              {loadingSubclases ? (
-                <Stack spacing={1}>
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} variant="rounded" height={60} />
-                  ))}
-                </Stack>
-              ) : subclases.length === 0 ? (
+              {subclases.length === 0 && !loadingSubclases ? (
                 <Box sx={{ textAlign: 'center', py: 6 }}>
                   <SubdirectoryArrowRightIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 1 }} />
                   <Typography color="text.secondary" gutterBottom>
-                    Esta clase aún no tiene subclases.
+                    {subclaseSearch
+                      ? 'No se encontraron subclases con ese criterio.'
+                      : 'Esta clase aún no tiene subclases.'}
                   </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    sx={{ mt: 1 }}
-                    onClick={() => setSubclaseDialog({ open: true, claseId: selectedClaseId, subclase: null })}
-                  >
-                    Crear primera subclase
-                  </Button>
+                  {!subclaseSearch && (
+                    <Button
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      sx={{ mt: 1 }}
+                      onClick={() => setSubclaseDialog({ open: true, claseId: selectedClaseId, subclase: null })}
+                    >
+                      Crear primera subclase
+                    </Button>
+                  )}
                 </Box>
               ) : (
-                <Stack spacing={1}>
-                  {subclases.map((s) => (
-                    <SubclaseRow
-                      key={s.id}
-                      subclase={s}
-                      onMenu={(e) => openSubclaseMenu(e, s)}
-                    />
-                  ))}
-                </Stack>
+                <Box sx={{ height: 520, width: '100%' }}>
+                  <DataGrid
+                    rows={subclases}
+                    columns={subclaseColumns}
+                    loading={loadingSubclases}
+                    rowCount={subclasesTotal}
+                    paginationMode="server"
+                    paginationModel={subclasePaginationModel}
+                    onPaginationModelChange={setSubclasePaginationModel}
+                    pageSizeOptions={[10, 15, 25, 50]}
+                    disableRowSelectionOnClick
+                    getRowId={(row) => row.id}
+                    sx={{ bgcolor: 'background.paper' }}
+                    localeText={{
+                      noRowsLabel: subclaseSearch ? 'Sin resultados' : 'Sin subclases',
+                      MuiTablePagination: {
+                        labelRowsPerPage: 'Filas por página:',
+                        labelDisplayedRows: ({ from, to, count }) =>
+                          `${from}–${to} de ${count !== -1 ? count : `más de ${to}`}`,
+                      },
+                    }}
+                  />
+                </Box>
               )}
             </Paper>
           </Grid>
@@ -412,6 +526,7 @@ export default function ProductosClasesPage() {
         claseId={subclaseDialog.claseId}
         subclase={subclaseDialog.subclase}
         isSaving={saveSubclaseMut.isPending}
+        availableClases={clases}
         onSubmit={(payload) =>
           saveSubclaseMut.mutate({ id: subclaseDialog.subclase?.id ?? null, payload })
         }
@@ -614,34 +729,6 @@ function ClaseCard({ clase, selected, onSelect, onMenu }: ClaseCardProps) {
   );
 }
 
-function SubclaseRow({ subclase, onMenu }: { subclase: ProductoSubclase; onMenu: (e: React.MouseEvent<HTMLElement>) => void }) {
-  return (
-    <Box
-      sx={{
-        display: 'flex', alignItems: 'center', gap: 1, p: 1.5,
-        border: 1, borderColor: 'divider', borderRadius: 1,
-        bgcolor: 'background.paper',
-        '&:hover': { borderColor: 'primary.light', bgcolor: 'action.hover' },
-        opacity: subclase.activo ? 1 : 0.6,
-      }}
-    >
-      <DragIndicatorIcon sx={{ color: 'text.disabled' }} />
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={500} noWrap>
-          {subclase.nombre}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Orden: {subclase.orden} {subclase.codigo && `• ${subclase.codigo}`}
-          {!subclase.activo && ' • INACTIVO'}
-        </Typography>
-      </Box>
-      <IconButton size="small" onClick={onMenu}>
-        <MoreVertIcon fontSize="small" />
-      </IconButton>
-    </Box>
-  );
-}
-
 interface ClaseFormDialogProps {
   open: boolean;
   clase: ProductoClase | null;
@@ -775,12 +862,13 @@ interface SubclaseFormDialogProps {
   claseId: string;
   subclase: ProductoSubclase | null;
   isSaving: boolean;
+  availableClases: ProductoClase[];
   onClose: () => void;
   onSubmit: (payload: Record<string, unknown>) => void;
 }
 
-function SubclaseFormDialog({ open, claseId, subclase, isSaving, onClose, onSubmit }: SubclaseFormDialogProps) {
-  const { control, handleSubmit, formState: { errors }, reset } = useForm<SubclaseForm>({
+function SubclaseFormDialog({ open, claseId, subclase, isSaving, availableClases, onClose, onSubmit }: SubclaseFormDialogProps) {
+  const { control, handleSubmit, formState: { errors }, reset, watch } = useForm<SubclaseForm>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(subclaseSchema) as any,
     defaultValues: {
@@ -802,6 +890,13 @@ function SubclaseFormDialog({ open, claseId, subclase, isSaving, onClose, onSubm
     }
   }, [open, claseId, subclase, reset]);
 
+  const selectedClaseId = watch('clase_id');
+  const isStandalone = !claseId;
+  const currentClase = useMemo(
+    () => availableClases.find((c) => c.id === selectedClaseId) || null,
+    [availableClases, selectedClaseId],
+  );
+
   const submit = (data: SubclaseForm) => {
     const payload: ProductoSubclasePayload = {
       clase_id: data.clase_id,
@@ -818,6 +913,35 @@ function SubclaseFormDialog({ open, claseId, subclase, isSaving, onClose, onSubm
         <DialogTitle>{subclase ? 'Editar Subclase' : 'Nueva Subclase'}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
+            {isStandalone ? (
+              <Controller
+                name="clase_id"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete<ProductoClase>
+                    options={availableClases}
+                    getOptionLabel={(opt) => opt.nombre}
+                    isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                    value={currentClase}
+                    onChange={(_, val) => field.onChange(val?.id ?? '')}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Clase padre"
+                        required
+                        error={!!errors.clase_id}
+                        helperText={errors.clase_id?.message || 'Selecciona la clase a la que pertenece esta subclase'}
+                        autoFocus
+                      />
+                    )}
+                  />
+                )}
+              />
+            ) : (
+              <Alert severity="info" icon={<SubdirectoryArrowRightIcon />}>
+                Pertenece a la clase <strong>{currentClase?.nombre ?? '...'}</strong>
+              </Alert>
+            )}
             <Controller
               name="nombre"
               control={control}
@@ -827,7 +951,7 @@ function SubclaseFormDialog({ open, claseId, subclase, isSaving, onClose, onSubm
                   label="Nombre de la subclase"
                   fullWidth
                   required
-                  autoFocus
+                  autoFocus={!isStandalone}
                   error={!!errors.nombre}
                   helperText={errors.nombre?.message}
                 />
