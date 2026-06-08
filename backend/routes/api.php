@@ -2,11 +2,17 @@
 
 use App\Modules\Auth\Http\Controllers\AuthController;
 use App\Modules\Catalog\Http\Controllers\CatalogController;
+use App\Modules\Company\Http\Controllers\EmpresaController;
 use App\Modules\Customers\Http\Controllers\CustomerController;
 use App\Modules\Inventory\Http\Controllers\InventoryController;
+use App\Modules\Personal\Http\Controllers\PersonalController;
+use App\Modules\Personal\Http\Controllers\PersonalReportController;
 use App\Modules\Products\Http\Controllers\ProductController;
 use App\Modules\Products\Http\Controllers\ProductoClaseController;
 use App\Modules\Products\Http\Controllers\ProductoSubclaseController;
+use App\Modules\Products\Http\Controllers\ProductReportController;
+use App\Modules\Purchases\Http\Controllers\CompraController;
+use App\Modules\Purchases\Http\Controllers\ProveedorController;
 use App\Modules\Sales\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,6 +80,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [ProductController::class, 'store'])->middleware('permission:crear-productos');
         Route::put('{product}', [ProductController::class, 'update'])->where('product', '[0-9]+')->middleware('permission:editar-productos');
         Route::delete('{product}', [ProductController::class, 'destroy'])->where('product', '[0-9]+')->middleware('permission:eliminar-productos');
+
+        Route::prefix('reportes')->group(function () {
+            Route::get('productos', [ProductReportController::class, 'productosActivos'])->middleware('permission:generar-reportes-productos');
+        });
     });
 
     Route::prefix('sales')->group(function () {
@@ -95,48 +105,48 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('purchases')->group(function () {
         Route::prefix('proveedores')->group(function () {
-            Route::get('/', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'index'])->middleware('permission:ver-proveedores');
-            Route::get('{proveedor}', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'show'])->middleware('permission:ver-proveedores');
-            Route::post('/', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'store'])->middleware('permission:crear-proveedores');
-            Route::put('{proveedor}', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'update'])->middleware('permission:editar-proveedores');
-            Route::delete('{proveedor}', [\App\Modules\Purchases\Http\Controllers\ProveedorController::class, 'destroy'])->middleware('permission:eliminar-proveedores');
+            Route::get('/', [ProveedorController::class, 'index'])->middleware('permission:ver-proveedores');
+            Route::get('{proveedor}', [ProveedorController::class, 'show'])->middleware('permission:ver-proveedores');
+            Route::post('/', [ProveedorController::class, 'store'])->middleware('permission:crear-proveedores');
+            Route::put('{proveedor}', [ProveedorController::class, 'update'])->middleware('permission:editar-proveedores');
+            Route::delete('{proveedor}', [ProveedorController::class, 'destroy'])->middleware('permission:eliminar-proveedores');
         });
         Route::prefix('compras')->group(function () {
-            Route::get('/', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'index'])->middleware('permission:ver-compras');
-            Route::get('{compra}', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'show'])->middleware('permission:ver-compras');
-            Route::post('/', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'store'])->middleware('permission:crear-compras');
-            Route::put('{compra}', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'update'])->middleware('permission:editar-compras');
-            Route::post('{compra}/confirmar', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'confirmar'])->middleware('permission:confirmar-compras');
-            Route::post('{compra}/anular', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'anular'])->middleware('permission:anular-compras');
-            Route::delete('{compra}', [\App\Modules\Purchases\Http\Controllers\CompraController::class, 'destroy'])->middleware('permission:eliminar-compras');
+            Route::get('/', [CompraController::class, 'index'])->middleware('permission:ver-compras');
+            Route::get('{compra}', [CompraController::class, 'show'])->middleware('permission:ver-compras');
+            Route::post('/', [CompraController::class, 'store'])->middleware('permission:crear-compras');
+            Route::put('{compra}', [CompraController::class, 'update'])->middleware('permission:editar-compras');
+            Route::post('{compra}/confirmar', [CompraController::class, 'confirmar'])->middleware('permission:confirmar-compras');
+            Route::post('{compra}/anular', [CompraController::class, 'anular'])->middleware('permission:anular-compras');
+            Route::delete('{compra}', [CompraController::class, 'destroy'])->middleware('permission:eliminar-compras');
         });
     });
 
     Route::prefix('empresa')->group(function () {
-        Route::get('/', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'show'])->middleware('permission:ver-configuracion');
-        Route::put('/', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'update'])->middleware('permission:configurar-empresa');
-        Route::post('imagen/{tipo}', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'uploadImage'])->middleware('permission:configurar-empresa');
-        Route::delete('imagen/{tipo}', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'resetImage'])->middleware('permission:configurar-empresa');
-        Route::post('actualizar-decimales', [\App\Modules\Company\Http\Controllers\EmpresaController::class, 'actualizarDecimalesSunat'])->middleware('permission:configurar-empresa');
+        Route::get('/', [EmpresaController::class, 'show'])->middleware('permission:ver-configuracion');
+        Route::put('/', [EmpresaController::class, 'update'])->middleware('permission:configurar-empresa');
+        Route::post('imagen/{tipo}', [EmpresaController::class, 'uploadImage'])->middleware('permission:configurar-empresa');
+        Route::delete('imagen/{tipo}', [EmpresaController::class, 'resetImage'])->middleware('permission:configurar-empresa');
+        Route::post('actualizar-decimales', [EmpresaController::class, 'actualizarDecimalesSunat'])->middleware('permission:configurar-empresa');
     });
 
     Route::prefix('personal')->group(function () {
-        Route::get('roles-disponibles', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'rolesDisponibles'])->middleware('permission:ver-personal');
-        Route::get('permisos-agrupados', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'permisosAgrupados'])->middleware('permission:ver-personal');
-        Route::get('foto/{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'getPhoto']);
-        Route::get('/', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'index'])->middleware('permission:ver-personal');
-        Route::get('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'show'])->middleware('permission:ver-personal');
-        Route::post('/', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'store'])->middleware('permission:crear-personal');
-        Route::put('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'update'])->middleware('permission:editar-personal');
-        Route::post('{personal}/foto', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'uploadPhoto'])->middleware('permission:editar-personal');
-        Route::delete('{personal}/foto', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'resetPhoto'])->middleware('permission:editar-personal');
-        Route::post('{personal}/toggle-activo', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'toggleActivo'])->middleware('permission:editar-personal');
-        Route::post('{personal}/reset-password', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'resetPassword'])->middleware('permission:editar-personal');
-        Route::delete('{personal}', [\App\Modules\Personal\Http\Controllers\PersonalController::class, 'destroy'])->middleware('permission:eliminar-personal');
+        Route::get('roles-disponibles', [PersonalController::class, 'rolesDisponibles'])->middleware('permission:ver-personal');
+        Route::get('permisos-agrupados', [PersonalController::class, 'permisosAgrupados'])->middleware('permission:ver-personal');
+        Route::get('foto/{personal}', [PersonalController::class, 'getPhoto']);
+        Route::get('/', [PersonalController::class, 'index'])->middleware('permission:ver-personal');
+        Route::get('{personal}', [PersonalController::class, 'show'])->middleware('permission:ver-personal');
+        Route::post('/', [PersonalController::class, 'store'])->middleware('permission:crear-personal');
+        Route::put('{personal}', [PersonalController::class, 'update'])->middleware('permission:editar-personal');
+        Route::post('{personal}/foto', [PersonalController::class, 'uploadPhoto'])->middleware('permission:editar-personal');
+        Route::delete('{personal}/foto', [PersonalController::class, 'resetPhoto'])->middleware('permission:editar-personal');
+        Route::post('{personal}/toggle-activo', [PersonalController::class, 'toggleActivo'])->middleware('permission:editar-personal');
+        Route::post('{personal}/reset-password', [PersonalController::class, 'resetPassword'])->middleware('permission:editar-personal');
+        Route::delete('{personal}', [PersonalController::class, 'destroy'])->middleware('permission:eliminar-personal');
 
         Route::prefix('reportes')->group(function () {
-            Route::get('personal-activo', [\App\Modules\Personal\Http\Controllers\PersonalReportController::class, 'personalActivo'])->middleware('permission:generar-reportes-personal');
-            Route::get('ficha-personal', [\App\Modules\Personal\Http\Controllers\PersonalReportController::class, 'fichaPersonal'])->middleware('permission:generar-reportes-personal');
+            Route::get('personal-activo', [PersonalReportController::class, 'personalActivo'])->middleware('permission:generar-reportes-personal');
+            Route::get('ficha-personal', [PersonalReportController::class, 'fichaPersonal'])->middleware('permission:generar-reportes-personal');
         });
     });
 });

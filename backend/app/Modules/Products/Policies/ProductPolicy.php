@@ -31,4 +31,9 @@ class ProductPolicy
     {
         return $user->can('eliminar-productos');
     }
+
+    public function generarReportesProductos(User $user): bool
+    {
+        return $user->can('generar-reportes-productos');
+    }
 }
