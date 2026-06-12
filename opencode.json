@@ -8,17 +8,17 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "gemma4:e4b": {
-          "name": "Gemma 4 9B (local)"
-        },
-        "gemma4:latest": {
-          "name": "Gemma 4 latest (local)"
-        },
         "minimax-m3:cloud": {
           "name": "Minimax M3 Cloud"
         },
+        "gemma4:31b-cloud": {
+          "name": "Gemma 4 31B Cloud"
+        },
         "deepseek-v4-pro:cloud": {
           "name": "DeepSeek V4 Pro Cloud"
+        },
+        "gpt-oss:120b-cloud": {
+          "name": "GPT-OSS 120B Cloud"
         }
       }
     }

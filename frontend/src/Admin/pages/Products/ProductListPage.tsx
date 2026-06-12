@@ -10,6 +10,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsApi } from '../../../shared/api/endpoints';
 import type { Product } from '../../../shared/types';
 
+const claseValueGetter = (_value: unknown, row: Product) => row.producto_clase?.nombre || '-';
+const subclaseValueGetter = (_value: unknown, row: Product) => row.producto_subclase?.nombre || '-';
+
 export default function ProductListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -32,41 +35,35 @@ export default function ProductListPage() {
     }
   }, [deleteMutation]);
 
-  const columns: GridColDef[] = [
-    { field: 'codigo', headerName: 'Código', width: 110 },
-    { field: 'nombre', headerName: 'Nombre', flex: 1, minWidth: 200 },
-    { field: 'codigo_sunat', headerName: 'Cód. SUNAT', width: 110 },
-    {
-      field: 'unidad_medida', headerName: 'U.M.', width: 80,
-      renderCell: (params: GridRenderCellParams<Product>) => params.row.unidad_medida?.simbolo || '-',
-    },
-    {
-      field: 'precio_venta', headerName: 'Precio S/', width: 110,
-      renderCell: (params: GridRenderCellParams<Product>) => `S/ ${Number(params.value).toFixed(2)}`,
-    },
-    {
-      field: 'stock_actual', headerName: 'Stock', width: 90,
-    },
-    {
-      field: 'activo', headerName: 'Estado', width: 100,
-      renderCell: (params: GridRenderCellParams<Product>) => (
-        <Chip label={params.value ? 'Activo' : 'Inactivo'} color={params.value ? 'success' : 'default'} size="small" />
-      ),
-    },
-    {
-      field: 'acciones', headerName: '', width: 80, sortable: false,
-      renderCell: (params: GridRenderCellParams<Product>) => (
+const columns: GridColDef[] = [
+  { field: 'codigo', headerName: 'Código', width: 110 },
+  { field: 'codigo_sunat', headerName: 'SKU', width: 110 },
+  { field: 'clase', headerName: 'Clase', width: 150, valueGetter: claseValueGetter },
+  { field: 'subclase', headerName: 'Subclase', width: 150, valueGetter: subclaseValueGetter },
+  { field: 'nombre', headerName: 'Nombre', flex: 1, minWidth: 200 },
+  { field: 'visible', headerName: 'Visible', width: 100, renderCell: (params: GridRenderCellParams<Product>) => (
+    <Chip label={params.row.activo ? 'Activo' : 'Inactivo'} color={params.row.activo ? 'success' : 'default'} size="small" />
+  ) },
+  {
+    field: 'acciones', headerName: '', width: 80, sortable: false,
+renderCell: (params: GridRenderCellParams<Product>) => (
         <Box>
+          <IconButton size="small" onClick={() => navigate(`/admin/productos/${params.row.id}`)}>
+            <i className="black eye link icon" />
+          </IconButton>
           <IconButton size="small" onClick={() => navigate(`/admin/productos/${params.row.id}/editar`)}>
             <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={() => {/* placeholder for warehouse action */}}>
+            <i className="black warehouse link icon" />
           </IconButton>
           <IconButton size="small" color="error" onClick={() => handleDelete(params.row.id)}>
             <DeleteIcon fontSize="small" />
           </IconButton>
         </Box>
       ),
-    },
-  ];
+  },
+];
 
   return (
     <Box>
@@ -90,6 +87,7 @@ export default function ProductListPage() {
         onPaginationModelChange={setPaginationModel}
         pageSizeOptions={[15, 25, 50]}
         disableRowSelectionOnClick
+        checkboxSelection
         autoHeight
       />
     </Box>

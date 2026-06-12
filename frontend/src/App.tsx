@@ -80,6 +80,7 @@ function AppWithAuth() {
           <Route path="compras/nueva" element={<SuspenseWrapper><PurchaseFormPage /></SuspenseWrapper>} />
           <Route path="proveedores" element={<SuspenseWrapper><SupplierListPage /></SuspenseWrapper>} />
           <Route path="proveedores/nuevo" element={<SuspenseWrapper><SupplierFormPage /></SuspenseWrapper>} />
+          <Route path="proveedores/:id/editar" element={<SuspenseWrapper><SupplierFormPage /></SuspenseWrapper>} />
           <Route path="*" element={<SuspenseWrapper><ComingSoonPage /></SuspenseWrapper>} />
         </Route>
       </Route>

@@ -42,8 +42,8 @@ export default function ReportesProductosPage() {
     enabled: !!selectedClase,
   });
 
-  const claseOptions = (clases ?? []).map((c) => ({ id: c.id, nombre: c.nombre }));
-  const subclaseOptions = (subclases ?? []).map((s) => ({ id: s.id, nombre: s.nombre }));
+  const claseOptions = (clases ?? []).map((c: { id: string; nombre: string }) => ({ id: c.id, nombre: c.nombre }));
+  const subclaseOptions = (subclases ?? []).map((s: { id: string; nombre: string }) => ({ id: s.id, nombre: s.nombre }));
 
   const handleGenerarReporte = async () => {
     try {
