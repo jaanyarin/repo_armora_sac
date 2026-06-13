@@ -13,6 +13,9 @@
 /backend/serve.out
 /sesion_estructura_panel_lateral
 
+# Auditoria - artefactos generados
+/_auditoria/auditar-resultado.json
+
 # IDE / OS
 .vscode/
 .idea/
