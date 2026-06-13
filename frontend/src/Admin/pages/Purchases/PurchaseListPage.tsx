@@ -12,6 +12,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchasesApi } from '../../../shared/api/endpoints';
 import type { Compra } from '../../../shared/types';
+import { useAuthStore } from '../../../shared/hooks/useAuth';
 
 const ESTADO_COLORS: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
   borrador: 'default',
@@ -32,6 +33,9 @@ const ESTADO_LABELS: Record<string, string> = {
 export default function PurchaseListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const userPermissions = useAuthStore(s => s.user?.permissions ?? []);
+  const canConfirmar = userPermissions.includes('confirmar-compras');
+  const canAnular = userPermissions.includes('anular-compras');
   const [search, setSearch] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<string>('');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 15 });
@@ -120,14 +124,14 @@ export default function PurchaseListPage() {
       field: 'acciones', headerName: 'Acciones', width: 120, sortable: false, filterable: false,
       renderCell: (params: GridRenderCellParams<Compra>) => (
         <Box>
-          {params.row.estado === 'borrador' && (
+          {canConfirmar && params.row.estado === 'borrador' && (
             <Tooltip title="Confirmar">
               <IconButton size="small" color="primary" onClick={() => handleConfirmar(params.row)}>
                 <CheckCircleIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
-          {(params.row.estado === 'confirmada' || params.row.estado === 'pagada' || params.row.estado === 'parcial') && (
+          {canAnular && (params.row.estado === 'confirmada' || params.row.estado === 'pagada' || params.row.estado === 'parcial') && (
             <Tooltip title="Anular">
               <IconButton size="small" color="error" onClick={() => handleAnular(params.row)}>
                 <CancelIcon fontSize="small" />

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Products\Http\Requests;
 
+use App\Modules\Products\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -9,7 +10,8 @@ class UpdateProductRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $product = $this->route('product');
+        return $this->user()->can('editar-productos', $product);
     }
 
     public function rules(): array

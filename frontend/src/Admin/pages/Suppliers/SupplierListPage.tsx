@@ -12,10 +12,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { proveedoresApi } from '../../../shared/api/endpoints';
 import type { Proveedor } from '../../../shared/types';
+import { useAuthStore } from '../../../shared/hooks/useAuth';
 
 export default function SupplierListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const userPermissions = useAuthStore(s => s.user?.permissions ?? []);
+  const canDelete = userPermissions.includes('eliminar-proveedores');
   const [search, setSearch] = useState('');
   const [activoFilter, setActivoFilter] = useState<string>('');
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 15 });
@@ -73,11 +76,13 @@ export default function SupplierListPage() {
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Eliminar">
-            <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {canDelete && (
+            <Tooltip title="Eliminar">
+              <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       ),
     },

@@ -21,14 +21,14 @@ const supplierSchema = z.object({
 type SupplierForm = z.infer<typeof supplierSchema>;
 
 export default function SupplierFormPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data: supplierData, isLoading: loadingSupplier } = useQuery({
     queryKey: ['proveedor', id],
-    queryFn: () => proveedoresApi.find(id!).then(r => r.data?.data),
+    queryFn: () => proveedoresApi.find(id as string).then(r => r.data?.data),
     enabled: isEdit,
   });
 
