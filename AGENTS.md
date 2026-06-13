@@ -133,6 +133,14 @@ Brechas vs perfil arquitecto:
 | `php artisan serve` | Servidor dev puerto 8000 (usar `--port=8005`) |
 | `php artisan db:seed` | Siembra roles (11), permisos (28), usuarios admin/vendedor |
 
+### Auditoría (`_auditoria/`)
+| Comando | Descripción |
+|---|---|
+| `.\_auditoria\auditar.ps1` | Layer 1: chequeos mecánicos (build + lint + tests FE/BE) |
+| `.\_auditoria\auditar.ps1 -Quick` | Solo build + lint, sin tests |
+| `.\_auditoria\auditar.ps1 -Frontend` | Solo frontend (build + lint + test) |
+| `.\_auditoria\auditar.ps1 -Backend` | Solo backend (test) |
+
 ## Base de datos
 
 PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
@@ -322,3 +330,53 @@ PostgreSQL 16, esquema dimensional (catálogos SUNAT compatibles).
 - Para tests de validación/anulación que requieren otro rol, instanciar el segundo usuario en `setUp()` y exponer un helper por rol (`asVendedor()`, `asAdmin()`, `asJefeAlmacen()`).
 - **Excepción**: tests E2E de Sanctum (que ejercitan la API real de login) pueden usar `actingAs()`, pero no credenciales literales en el código — usar `User::factory()` + `actingAs($user, 'web')` con `Sanctum::actingAs($user)`.
 - Aplicar `RefreshDatabase` o `DatabaseTransactions` para aislar estado entre tests.
+
+## Auditoría Automática (Arquitecto ↔ Auditor)
+
+El proyecto cuenta con **2 agentes independientes** que trabajan coordinados:
+
+| Agente | Perfil | Labor |
+|---|---|---|
+| **Arquitecto** | `_perfiles_tecnicos/senior-fullstack-erp-architect_v3.md` | Implementar features, escribir código |
+| **Auditor** | `_auditoria/senior-code-architecture-quality-auditor.md` | Validar calidad contra 17 gates |
+
+### Flujo de trabajo
+
+```
+Arquitecto implementa → Layer 1 (script) → ¿pasa? → Layer 2 (auditor IA) → ¿sin críticos? → ✅
+                         ↑                                     │
+                         └───────── remediar ←─────────────────┘
+```
+
+### Layer 1 — Chequeos Mecánicos (script)
+
+Ejecutar **inmediatamente después de implementar**:
+
+```powershell
+.\_auditoria\auditar.ps1          # build + lint + tests FE/BE
+.\_auditoria\auditar.ps1 -Quick   # solo build + lint (rápido)
+```
+
+El script produce `_auditoria/auditar-resultado.json`.
+
+### Layer 2 — Gate Review (agente auditor)
+
+Si Layer 1 pasa, el agente arquitecto **invoca al agente auditor** mediante el mecanismo de subagente (Task tool). El auditor:
+1. Inspecciona los archivos modificados
+2. Evalúa cada gate aplicable (G-ARQ, G-RBAC, G-FORM, G-API, G-TS, G-FE, etc.)
+3. Produce un reporte con hallazgos clasificados por severidad (🔴/🟠/🟡/🟢)
+
+### Ciclo de remediación
+
+- **🔴 Crítico** → arquitecto corrige INMEDIATAMENTE, reinicia desde Layer 1
+- **🟠 Alto** → arquitecto corrige antes del siguiente HITO
+- **🟡 Medio / 🟢 Bajo** → se documentan en `_auditoria/MATRIZ_RIESGOS.md`
+
+### Documentos de referencia
+
+| Documento | Propósito |
+|---|---|
+| `_auditoria/PROTOCOLO_AUTOMATICO.md` | Protocolo detallado de interacción arquitecto↔auditor |
+| `_auditoria/auditar.ps1` | Script Layer 1 (chequeos mecánicos) |
+| `_auditoria/CHECKLIST_MAESTRO.md` | 17 gates con criterios detallados |
+| `_auditoria/MATRIZ_RIESGOS.md` | Deuda técnica diferida acumulada |
