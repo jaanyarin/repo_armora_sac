@@ -1,7 +1,7 @@
 # Matriz de Riesgos — ARMORA NextGen
 
 **Documento vivo.** Cada hallazgo identificado en gate reviews se registra aquí con severidad, estado, y plan de remediación.  
-**Última actualización:** 2026-06-06 (validación Ola A + B HITO-INTERCALAR-002)
+**Última actualización:** 2026-06-12 (remediación hallazgos medios auditoría ProductFormPage + protocolo automático)
 
 ---
 
@@ -12,8 +12,8 @@
 | 🔴 Crítico | 0 | 3 | 3 |
 | 🟠 Alto | 0 | 11 | 11 |
 | 🟡 Medio | 8 | 0 | 8 |
-| 🟢 Bajo | 3 | 0 | 3 |
-| **Total** | **11** | **14** | **25** |
+| 🟢 Bajo | 5 | 0 | 5 |
+| **Total** | **13** | **14** | **27** |
 
 ---
 
@@ -69,6 +69,8 @@
 | B-02 | 003 | `customer_id` no se valida contra `customers.activo`. | `StoreSaleRequest.php:18` | Agregar condición `where('activo', true)` a la regla exists. | Arquitecto | 🟢 Abierto |
 | B-03 | 003 | Si un cliente se soft-deletea, las ventas existentes pierden nombre legible (no hay `withTrashed` en la relación). | Modelo Sale relación `cliente()` | Usar `->withTrashed()` en la relación para que las ventas existentes sigan mostrando datos del cliente. | Arquitecto | 🟢 Abierto |
 | **D-07** | **004** | **FormRequests no leídos en detalle en esta auditoría** (existe validación parcial con `exists:dim_*` y `exists:purchases_*`). | `StoreCompraRequest.php`, `UpdateCompraRequest.php`, `StoreProveedorRequest.php`, `UpdateProveedorRequest.php` | Lectura completa y validación cruzada en próxima pasada (Ola C). | Auditor | 🟢 **Nuevo (Ola B)** — Diferido, no bloqueante. |
+| B-04 | 005-PRODUCTOS | Sin cobertura de tests Vitest/Playwright para páginas nuevas (PurchaseListPage, SupplierFormPage, SupplierListPage). | `frontend/src/Admin/pages/Purchases/PurchaseListPage.tsx`, `Suppliers/SupplierFormPage.tsx`, `Suppliers/SupplierListPage.tsx` | Agregar tests Vitest para estados de mutación (success/error) y render condicional de botones según permisos. | Arquitecto | 🟢 Abierto — No bloqueante, postergable a HITO-006 (cross-cutting testing). |
+| B-05 | 005-PRODUCTOS | Barrel imports MUI en todos los archivos nuevos (`import { Box, Typography, ... } from '@mui/material'`). | Todos los archivos .tsx nuevos | Migrar a imports tree-shakeables (`import Box from '@mui/material/Box'`) en un sprint de optimización de bundle. | Arquitecto | 🟢 Abierto — Diferido a HITO-006 (bundle optimization). |
 
 ---
 
@@ -76,6 +78,7 @@
 
 | Fecha | Acción | Detalle |
 |---|---|---|
+| 2026-06-12 | Auditoría ProductFormPage + protocolo automático | 2 nuevos 🟢 bajos registrados (B-04: sin tests frontend, B-05: barrel imports). 3 remediaciones 🟡 aplicadas (H-01, H-02, H-03). |
 | 2026-06-04 | Creación inicial | 25 hallazgos registrados de HITO 003 (3C + 11A + 8M + 3B) |
 | 2026-06-04 | Re-auditoría — Cierre C-01, C-02, C-03 | Verificados en commit `5ba310b`. 15/15 tests Sales+Inventory ✅. INDICE_MAESTRO honesto. RBAC granular corregido. IGV unificado. HITO 003 → 🟡 Aprobado condicional. 22 hallazgos abiertos restantes. |
 | 2026-06-05 | Cierre parcial ADR-009 (Fase 0 + 3 colaterales) | Commit `d7e5fdd` corrige A-01, A-04, A-05, A-07 + A-03, A-09, A-10. 27/27 tests ✅. **Fases 1-4 NO ejecutadas**: Purchases no existe, Finance no existe. Pendientes: A-02, A-06, A-08, A-11. |
